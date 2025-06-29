@@ -79,7 +79,11 @@ protected:
 		Reset(&m_GameInfo);
 	}
 
-	static void WriteBuffer(std::vector<unsigned char> &vBuffer, const void *pData, size_t DataSize)
+#if defined(__GNUC__) || defined(__clang__)
+	__attribute__((noinline))
+#endif
+	static void
+	WriteBuffer(std::vector<unsigned char> &vBuffer, const void *pData, size_t DataSize)
 	{
 		if(DataSize <= 0)
 			return;
