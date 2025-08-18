@@ -30,6 +30,18 @@ static const constexpr float ROWSIZE = 25.0f;
 static const constexpr float ROWGAP = 5.0f;
 static const constexpr float FONTSIZE = 15.0f;
 
+const CMenusIngameTouchControls::CBehaviorFactoryEditor CMenusIngameTouchControls::BEHAVIOR_FACTORIES_EDITOR[10] = {
+	{CTouchControls::CIngameMenuTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CIngameMenuTouchButtonBehavior>(); }},
+	{CTouchControls::CExtraMenuTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CExtraMenuTouchButtonBehavior>(0); }},
+	{CTouchControls::CEmoticonTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CEmoticonTouchButtonBehavior>(); }},
+	{CTouchControls::CSpectateTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CSpectateTouchButtonBehavior>(); }},
+	{CTouchControls::CSwapActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CSwapActionTouchButtonBehavior>(); }},
+	{CTouchControls::CUseActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CUseActionTouchButtonBehavior>(); }},
+	{CTouchControls::CJoystickActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickActionTouchButtonBehavior>(); }},
+	{CTouchControls::CJoystickAimTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickAimTouchButtonBehavior>(); }},
+	{CTouchControls::CJoystickFireTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickFireTouchButtonBehavior>(); }},
+	{CTouchControls::CJoystickHookTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickHookTouchButtonBehavior>(); }}};
+
 void CMenusIngameTouchControls::RenderTouchButtonEditor(CUIRect MainView)
 {
 	if(!GameClient()->m_TouchControls.IsButtonEditing())
@@ -354,7 +366,7 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 			static CScrollRegion s_ButtonPredefinedDropDownScrollRegion;
 			const char **apPredefineds = PredefinedNames();
 			s_ButtonPredefinedDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_ButtonPredefinedDropDownScrollRegion;
-			const int NewPredefined = Ui()->DoDropDown(&MiddleButton, m_PredefinedBehaviorType, apPredefineds, std::size(m_aBehaviorFactoriesEditor), s_ButtonPredefinedDropDownState);
+			const int NewPredefined = Ui()->DoDropDown(&MiddleButton, m_PredefinedBehaviorType, apPredefineds, std::size(BEHAVIOR_FACTORIES_EDITOR), s_ButtonPredefinedDropDownState);
 			if(NewPredefined != m_PredefinedBehaviorType)
 			{
 				m_PredefinedBehaviorType = NewPredefined;
@@ -1299,7 +1311,7 @@ void CMenusIngameTouchControls::SaveCachedSettingsToTarget(CTouchControls::CTouc
 		if(m_PredefinedBehaviorType == (int)EPredefinedType::EXTRA_MENU)
 			pTargetButton->m_pBehavior = std::make_unique<CTouchControls::CExtraMenuTouchButtonBehavior>(CTouchControls::CExtraMenuTouchButtonBehavior(m_CachedExtraMenuNumber));
 		else
-			pTargetButton->m_pBehavior = m_aBehaviorFactoriesEditor[m_PredefinedBehaviorType].m_Factory();
+			pTargetButton->m_pBehavior = BEHAVIOR_FACTORIES_EDITOR[m_PredefinedBehaviorType].m_Factory();
 	}
 	else
 	{
@@ -1384,7 +1396,7 @@ int CMenusIngameTouchControls::CalculatePredefinedType(const char *pType) const
 {
 	int IntegerType;
 	for(IntegerType = (int)EPredefinedType::EXTRA_MENU;
-		str_comp(pType, m_aBehaviorFactoriesEditor[IntegerType].m_pId) != 0 && IntegerType < (int)EPredefinedType::NUM_PREDEFINEDS;
+		str_comp(pType, BEHAVIOR_FACTORIES_EDITOR[IntegerType].m_pId) != 0 && IntegerType < (int)EPredefinedType::NUM_PREDEFINEDS;
 		IntegerType++)
 		;
 	return IntegerType;
@@ -1508,6 +1520,6 @@ const char **CMenusIngameTouchControls::PredefinedNames() const
 	s_apPredefineds[7] = Localize("Joystick Aim", "Predefined touch button behaviors");
 	s_apPredefineds[8] = Localize("Joystick Fire", "Predefined touch button behaviors");
 	s_apPredefineds[9] = Localize("Joystick Hook", "Predefined touch button behaviors");
-	dbg_assert(std::size(s_apPredefineds) == std::size(m_aBehaviorFactoriesEditor), "Insufficient predefined names");
+	dbg_assert(std::size(s_apPredefineds) == std::size(BEHAVIOR_FACTORIES_EDITOR), "Insufficient predefined names");
 	return s_apPredefineds;
 }

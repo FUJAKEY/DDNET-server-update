@@ -177,17 +177,7 @@ public:
 		std::function<std::unique_ptr<CTouchControls::CPredefinedTouchButtonBehavior>()> m_Factory;
 	};
 
-	const CBehaviorFactoryEditor m_aBehaviorFactoriesEditor[10] = {
-		{CTouchControls::CIngameMenuTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CIngameMenuTouchButtonBehavior>(); }},
-		{CTouchControls::CExtraMenuTouchButtonBehavior::BEHAVIOR_ID, [&]() { return std::make_unique<CTouchControls::CExtraMenuTouchButtonBehavior>(m_CachedExtraMenuNumber); }},
-		{CTouchControls::CEmoticonTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CEmoticonTouchButtonBehavior>(); }},
-		{CTouchControls::CSpectateTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CSpectateTouchButtonBehavior>(); }},
-		{CTouchControls::CSwapActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CSwapActionTouchButtonBehavior>(); }},
-		{CTouchControls::CUseActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CUseActionTouchButtonBehavior>(); }},
-		{CTouchControls::CJoystickActionTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickActionTouchButtonBehavior>(); }},
-		{CTouchControls::CJoystickAimTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickAimTouchButtonBehavior>(); }},
-		{CTouchControls::CJoystickFireTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickFireTouchButtonBehavior>(); }},
-		{CTouchControls::CJoystickHookTouchButtonBehavior::BEHAVIOR_ID, []() { return std::make_unique<CTouchControls::CJoystickHookTouchButtonBehavior>(); }}};
+	static const CBehaviorFactoryEditor BEHAVIOR_FACTORIES_EDITOR[10];
 };
 
 #endif

@@ -611,22 +611,22 @@ private:
 	bool m_LongPress = false;
 	std::optional<IInput::CTouchFingerState> m_ActiveFingerState;
 	std::optional<IInput::CTouchFingerState> m_ZoomFingerState;
+	std::optional<IInput::CTouchFingerState> m_LongPressFingerState;
 	vec2 m_ZoomStartPos = vec2(0.0f, 0.0f);
 	vec2 m_AccumulatedDelta = vec2(0.0f, 0.0f);
 	std::vector<IInput::CTouchFingerState> m_vDeletedFingerState;
-	std::optional<IInput::CTouchFingerState> m_LongPressFingerState;
 	std::array<bool, (size_t)EButtonVisibility::NUM_VISIBILITIES> m_aVirtualVisibilities;
 
+	// Partially copied so it looks the same as m_pSelectedButton. Follows along the fingers while sliding.
+	std::unique_ptr<CTouchButton> m_pSampleButton = nullptr;
+	// For rendering. Calculated from m_pSampleButton's m_UnitRect, will not overlapping with any rect.
 	std::optional<CUnitRect> m_ShownRect;
 	CTouchButton *m_pSelectedButton = nullptr;
-	// This is for render, when directly slide to move buttons on screen.
-	std::unique_ptr<CTouchButton> m_pSampleButton = nullptr;
+
+	bool m_UnsavedChanges = false;
 	bool m_PreviewAllButtons = false;
 
 public:
-	bool UnsavedChanges() const { return m_UnsavedChanges; }
-	void SetUnsavedChanges(bool UnsavedChanges) { m_UnsavedChanges = UnsavedChanges; }
-
 	CTouchButton *NewButton();
 	void DeleteSelectedButton();
 	bool IsRectOverlapping(CUnitRect MyRect = {0, 0, BUTTON_SIZE_MINIMUM, BUTTON_SIZE_MINIMUM}) const;
@@ -636,6 +636,8 @@ public:
 	CUIRect CalculateScreenFromUnitRect(CUnitRect Unit, EButtonShape Shape = EButtonShape::RECT) const;
 
 	// Getters and setters.
+	bool UnsavedChanges() const { return m_UnsavedChanges; }
+	void SetUnsavedChanges(bool UnsavedChanges) { m_UnsavedChanges = UnsavedChanges; }
 	std::array<bool, (size_t)EButtonVisibility::NUM_VISIBILITIES> VirtualVisibilities() const { return m_aVirtualVisibilities; }
 	void ReverseVirtualVisibilities(int Number) { m_aVirtualVisibilities[Number] = !m_aVirtualVisibilities[Number]; }
 	std::optional<CUnitRect> ShownRect() const { return m_ShownRect; }
@@ -703,7 +705,6 @@ public:
 
 private:
 	CPopupParam m_PopupParam;
-	bool m_UnsavedChanges = false;
 	std::array<CIssueParam, (int)EIssueType::NUM_ISSUES> m_aIssueParam;
 };
 
