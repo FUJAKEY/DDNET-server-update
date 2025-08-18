@@ -18,7 +18,7 @@ CLayerTiles::CLayerTiles(CEditor *pEditor, int w, int h) :
 	CLayer(pEditor)
 {
 	m_Type = LAYERTYPE_TILES;
-	m_aName[0] = '\0';
+	m_aLayerName[0] = '\0';
 	m_Width = w;
 	m_Height = h;
 	m_Image = -1;

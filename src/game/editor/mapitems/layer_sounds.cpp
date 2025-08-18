@@ -10,7 +10,7 @@ CLayerSounds::CLayerSounds(CEditor *pEditor) :
 	CLayer(pEditor)
 {
 	m_Type = LAYERTYPE_SOUNDS;
-	m_aName[0] = '\0';
+	m_aLayerName[0] = '\0';
 	m_Sound = -1;
 }
 
