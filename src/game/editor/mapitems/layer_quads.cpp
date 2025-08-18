@@ -11,7 +11,7 @@ CLayerQuads::CLayerQuads(CEditor *pEditor) :
 	CLayer(pEditor)
 {
 	m_Type = LAYERTYPE_QUADS;
-	m_aName[0] = '\0';
+	m_aLayerName[0] = '\0';
 	m_Image = -1;
 }
 
