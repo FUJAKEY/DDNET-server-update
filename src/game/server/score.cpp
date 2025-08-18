@@ -144,10 +144,6 @@ void CScore::MapInfo(int ClientId, const char *pMapName)
 
 void CScore::SaveScore(int ClientId, int TimeTicks, const char *pTimestamp, const float aTimeCp[NUM_CHECKPOINTS], bool NotEligible)
 {
-	CConsole *pCon = (CConsole *)GameServer()->Console();
-	if(pCon->Cheated() || NotEligible)
-		return;
-
 	GameServer()->TeehistorianRecordPlayerFinish(ClientId, TimeTicks);
 
 	CPlayer *pCurPlayer = GameServer()->m_apPlayers[ClientId];
@@ -169,14 +165,7 @@ void CScore::SaveScore(int ClientId, int TimeTicks, const char *pTimestamp, cons
 
 void CScore::SaveTeamScore(int Team, int *pClientIds, unsigned int Size, int TimeTicks, const char *pTimestamp)
 {
-	CConsole *pCon = (CConsole *)GameServer()->Console();
-	if(pCon->Cheated())
-		return;
-	for(unsigned int i = 0; i < Size; i++)
-	{
-		if(GameServer()->m_apPlayers[pClientIds[i]]->m_NotEligibleForFinish)
-			return;
-	}
+	
 
 	GameServer()->TeehistorianRecordTeamFinish(Team, TimeTicks);
 
