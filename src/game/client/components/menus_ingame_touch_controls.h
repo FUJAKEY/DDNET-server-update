@@ -11,7 +11,7 @@ public:
 	static constexpr const float BUTTON_EDITOR_WIDTH = 700.0f;
 	enum class EBehaviorType
 	{
-		BIND = 0,
+		BIND,
 		BIND_TOGGLE,
 		PREDEFINED,
 		NUM_BEHAVIORS
@@ -19,7 +19,7 @@ public:
 
 	enum class EPredefinedType
 	{
-		INGAME_MENU = 0,
+		INGAME_MENU,
 		EXTRA_MENU,
 		EMOTICON,
 		SPECTATE,
@@ -35,7 +35,7 @@ public:
 	// Which menu is selected.
 	enum class EMenuType
 	{
-		MENU_FILE = 0,
+		MENU_FILE,
 		MENU_BUTTONS,
 		MENU_SETTINGS,
 		MENU_PREVIEW,
@@ -45,7 +45,7 @@ public:
 
 	enum class ESortType
 	{
-		LABEL = 0,
+		LABEL,
 		X,
 		Y,
 		W,
@@ -56,7 +56,7 @@ public:
 
 	enum class EElementType
 	{
-		LAYOUT = 0,
+		LAYOUT,
 		VISIBILITY,
 		BEHAVIOR,
 		NUM_ELEMENTS
@@ -65,7 +65,7 @@ public:
 
 	enum class EVisibilityType
 	{
-		EXCLUDE = 0,
+		EXCLUDE,
 		INCLUDE,
 		IGNORE,
 		NUM_VISIBILITIES
@@ -83,8 +83,8 @@ public:
 	CLineInputNumber m_InputH;
 	CTouchControls::EButtonShape m_CachedShape;
 
-	int m_EditBehaviorType = (int)EBehaviorType::BIND;
-	int m_PredefinedBehaviorType = (int)EPredefinedType::EXTRA_MENU;
+	EBehaviorType m_EditBehaviorType = EBehaviorType::BIND;
+	EPredefinedType m_PredefinedBehaviorType = EPredefinedType::EXTRA_MENU;
 	int m_CachedExtraMenuNumber = 0;
 
 	class CBehaviorElements
@@ -130,7 +130,7 @@ public:
 	std::vector<CTouchControls::CTouchButton *> m_vpButtons;
 	std::vector<CTouchControls::CTouchButton *> m_vpMutableButtons;
 	CLineInputBuffered<1024> m_FilterInput;
-	unsigned m_SelectedPreviewButtonIndex = -1;
+	int m_SelectedPreviewButtonIndex = -1;
 
 	void RenderTouchButtonEditor(CUIRect MainView);
 	bool RenderLayoutSettingBlock(CUIRect Block);

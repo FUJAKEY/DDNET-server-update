@@ -662,7 +662,7 @@ public:
 	enum class EPopupType
 	{
 		// Unsaved settings when changing selected button.
-		BUTTON_CHANGED = 0,
+		BUTTON_CHANGED,
 		// FindPositionXY can't find an empty space for the selected button(Currently it's overlapping).
 		NO_SPACE,
 		// Selected button is not visible.
@@ -687,7 +687,7 @@ public:
 	// This is usually for update cached settings in button editor.
 	enum class EIssueType
 	{
-		CACHE_SETTINGS = 0, // Update Cached settings from m_pTargetButton.
+		CACHE_SETTINGS, // Update Cached settings from m_pTargetButton.
 		SAVE_SETTINGS, // Save Cached settings to m_pTargetButton.
 		CACHE_POSITION, // Update position from m_pTargetButton.
 		NUM_ISSUES

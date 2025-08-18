@@ -331,23 +331,23 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 	static CScrollRegion s_ButtonBehaviorDropDownScrollRegion;
 	s_ButtonBehaviorDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_ButtonBehaviorDropDownScrollRegion;
 	const char *apBehaviors[] = {Localize("Bind", "Touch button behavior"), Localize("Bind Toggle", "Touch button behavior"), Localize("Predefined", "Touch button behavior")};
-	const int NewButtonBehavior = Ui()->DoDropDown(&MiddleButton, m_EditBehaviorType, apBehaviors, std::size(apBehaviors), s_ButtonBehaviorDropDownState);
+	const EBehaviorType NewButtonBehavior = (EBehaviorType)Ui()->DoDropDown(&MiddleButton, (int)m_EditBehaviorType, apBehaviors, std::size(apBehaviors), s_ButtonBehaviorDropDownState);
 	if(NewButtonBehavior != m_EditBehaviorType)
 	{
 		m_EditBehaviorType = NewButtonBehavior;
-		if(m_EditBehaviorType == (int)EBehaviorType::BIND)
+		if(m_EditBehaviorType == EBehaviorType::BIND)
 		{
 			m_vBehaviorElements[0]->UpdateInputs();
 		}
 		SetUnsavedChanges(true);
 		Changed = true;
 	}
-	if(m_EditBehaviorType != (int)EBehaviorType::BIND_TOGGLE)
+	if(m_EditBehaviorType != EBehaviorType::BIND_TOGGLE)
 	{
 		Block.HSplitTop(ROWSIZE, &EditBox, &Block);
 		Block.HSplitTop(ROWGAP, nullptr, &Block);
 		EditBox.VSplitMid(&LeftButton, &MiddleButton);
-		if(m_EditBehaviorType == (int)EBehaviorType::BIND)
+		if(m_EditBehaviorType == EBehaviorType::BIND)
 		{
 			str_format(aBuf, sizeof(aBuf), "%s:", Localize("Command"));
 			Ui()->DoLabel(&LeftButton, aBuf, FONTSIZE, TEXTALIGN_ML);
@@ -358,7 +358,7 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 				Changed = true;
 			}
 		}
-		else if(m_EditBehaviorType == (int)EBehaviorType::PREDEFINED)
+		else if(m_EditBehaviorType == EBehaviorType::PREDEFINED)
 		{
 			str_format(aBuf, sizeof(aBuf), "%s:", Localize("Type"));
 			Ui()->DoLabel(&LeftButton, aBuf, FONTSIZE, TEXTALIGN_ML);
@@ -366,7 +366,7 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 			static CScrollRegion s_ButtonPredefinedDropDownScrollRegion;
 			const char **apPredefineds = PredefinedNames();
 			s_ButtonPredefinedDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_ButtonPredefinedDropDownScrollRegion;
-			const int NewPredefined = Ui()->DoDropDown(&MiddleButton, m_PredefinedBehaviorType, apPredefineds, std::size(BEHAVIOR_FACTORIES_EDITOR), s_ButtonPredefinedDropDownState);
+			const EPredefinedType NewPredefined = (EPredefinedType)Ui()->DoDropDown(&MiddleButton, (int)m_PredefinedBehaviorType, apPredefineds, std::size(BEHAVIOR_FACTORIES_EDITOR), s_ButtonPredefinedDropDownState);
 			if(NewPredefined != m_PredefinedBehaviorType)
 			{
 				m_PredefinedBehaviorType = NewPredefined;
@@ -377,7 +377,7 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 		Block.HSplitTop(ROWSIZE, &EditBox, &Block);
 		Block.HSplitTop(ROWGAP, nullptr, &Block);
 		EditBox.VSplitMid(&LeftButton, &MiddleButton);
-		if(m_EditBehaviorType == (int)EBehaviorType::BIND)
+		if(m_EditBehaviorType == EBehaviorType::BIND)
 		{
 			str_format(aBuf, sizeof(aBuf), "%s:", Localize("Label"));
 			Ui()->DoLabel(&LeftButton, aBuf, FONTSIZE, TEXTALIGN_ML);
@@ -388,7 +388,7 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 				Changed = true;
 			}
 		}
-		else if(m_EditBehaviorType == (int)EBehaviorType::PREDEFINED && m_PredefinedBehaviorType == (int)EPredefinedType::EXTRA_MENU) // Extra menu type, needs to input number.
+		else if(m_EditBehaviorType == EBehaviorType::PREDEFINED && m_PredefinedBehaviorType == EPredefinedType::EXTRA_MENU) // Extra menu type, needs to input number.
 		{
 			// Increase & Decrease button share 1/2 width, the rest is for label.
 			EditBox.VSplitLeft(ROWSIZE, &LeftButton, &MiddleButton);
@@ -420,7 +420,7 @@ bool CMenusIngameTouchControls::RenderBehaviorSettingBlock(CUIRect Block)
 		Block.HSplitTop(ROWSIZE, &EditBox, &Block);
 		Block.HSplitTop(ROWGAP, nullptr, &Block);
 		EditBox.VSplitMid(&LeftButton, &MiddleButton);
-		if(m_EditBehaviorType == (int)EBehaviorType::BIND)
+		if(m_EditBehaviorType == EBehaviorType::BIND)
 		{
 			str_format(aBuf, sizeof(aBuf), "%s:", Localize("Label type"));
 			Ui()->DoLabel(&LeftButton, aBuf, FONTSIZE, TEXTALIGN_ML);
@@ -792,7 +792,7 @@ void CMenusIngameTouchControls::RenderTouchButtonBrowser(CUIRect MainView)
 		for(unsigned ButtonIndex = 0; ButtonIndex < m_vpMutableButtons.size(); ButtonIndex++)
 		{
 			CTouchControls::CTouchButton *pButton = m_vpMutableButtons[ButtonIndex];
-			const CListboxItem ListItem = s_PreviewListBox.DoNextItem(&m_vpMutableButtons[ButtonIndex], m_SelectedPreviewButtonIndex == ButtonIndex);
+			const CListboxItem ListItem = s_PreviewListBox.DoNextItem(&m_vpMutableButtons[ButtonIndex], m_SelectedPreviewButtonIndex == (int)ButtonIndex);
 			if(ListItem.m_Visible)
 			{
 				EditBox = ListItem.m_Rect;
@@ -1193,8 +1193,8 @@ bool CMenusIngameTouchControls::CheckCachedSettings() const
 void CMenusIngameTouchControls::ResetCachedSettings()
 {
 	// Reset all cached values.
-	m_EditBehaviorType = (int)EBehaviorType::BIND;
-	m_PredefinedBehaviorType = (int)EPredefinedType::EXTRA_MENU;
+	m_EditBehaviorType = EBehaviorType::BIND;
+	m_PredefinedBehaviorType = EPredefinedType::EXTRA_MENU;
 	m_CachedExtraMenuNumber = 0;
 	m_vBehaviorElements.clear();
 	m_vBehaviorElements.emplace_back(std::make_unique<CBehaviorElements>());
@@ -1229,7 +1229,7 @@ void CMenusIngameTouchControls::CacheAllSettingsFromTarget(CTouchControls::CTouc
 		const char *pBehaviorType = pTargetButton->m_pBehavior->GetBehaviorType();
 		if(str_comp(pBehaviorType, CTouchControls::CBindTouchButtonBehavior::BEHAVIOR_TYPE) == 0)
 		{
-			m_EditBehaviorType = (int)EBehaviorType::BIND;
+			m_EditBehaviorType = EBehaviorType::BIND;
 			auto *pTargetBehavior = static_cast<CTouchControls::CBindTouchButtonBehavior *>(pTargetButton->m_pBehavior.get());
 			// m_LabelType must not be null. Default value is PLAIN.
 			m_vBehaviorElements[0]->m_CachedCommands = {pTargetBehavior->GetLabel().m_pLabel, pTargetBehavior->GetLabel().m_Type, pTargetBehavior->GetCommand()};
@@ -1237,7 +1237,7 @@ void CMenusIngameTouchControls::CacheAllSettingsFromTarget(CTouchControls::CTouc
 		}
 		else if(str_comp(pBehaviorType, CTouchControls::CBindToggleTouchButtonBehavior::BEHAVIOR_TYPE) == 0)
 		{
-			m_EditBehaviorType = (int)EBehaviorType::BIND_TOGGLE;
+			m_EditBehaviorType = EBehaviorType::BIND_TOGGLE;
 			auto *pTargetBehavior = static_cast<CTouchControls::CBindToggleTouchButtonBehavior *>(pTargetButton->m_pBehavior.get());
 			auto TargetCommands = pTargetBehavior->GetCommand();
 			// Can't use resize here :(
@@ -1253,16 +1253,16 @@ void CMenusIngameTouchControls::CacheAllSettingsFromTarget(CTouchControls::CTouc
 		}
 		else if(str_comp(pBehaviorType, CTouchControls::CPredefinedTouchButtonBehavior::BEHAVIOR_TYPE) == 0)
 		{
-			m_EditBehaviorType = (int)EBehaviorType::PREDEFINED;
+			m_EditBehaviorType = EBehaviorType::PREDEFINED;
 			auto *pTargetBehavior = static_cast<CTouchControls::CPredefinedTouchButtonBehavior *>(pTargetButton->m_pBehavior.get());
 			const char *pPredefinedType = pTargetBehavior->GetPredefinedType();
 			if(pPredefinedType == nullptr)
-				m_PredefinedBehaviorType = (int)EPredefinedType::EXTRA_MENU;
+				m_PredefinedBehaviorType = EPredefinedType::EXTRA_MENU;
 			else
-				m_PredefinedBehaviorType = CalculatePredefinedType(pPredefinedType);
-			dbg_assert(m_PredefinedBehaviorType != (int)EPredefinedType::NUM_PREDEFINEDS, "Detected out of bound m_PredefinedBehaviorType. pPredefinedType = %s", pPredefinedType);
+				m_PredefinedBehaviorType = (EPredefinedType)CalculatePredefinedType(pPredefinedType);
+			dbg_assert(m_PredefinedBehaviorType != EPredefinedType::NUM_PREDEFINEDS, "Detected out of bound m_PredefinedBehaviorType. pPredefinedType = %s", pPredefinedType);
 
-			if(m_PredefinedBehaviorType == (int)EPredefinedType::EXTRA_MENU)
+			if(m_PredefinedBehaviorType == EPredefinedType::EXTRA_MENU)
 			{
 				auto *pExtraMenuBehavior = static_cast<CTouchControls::CExtraMenuTouchButtonBehavior *>(pTargetButton->m_pBehavior.get());
 				m_CachedExtraMenuNumber = pExtraMenuBehavior->GetNumber();
@@ -1291,14 +1291,14 @@ void CMenusIngameTouchControls::SaveCachedSettingsToTarget(CTouchControls::CTouc
 	pTargetButton->UpdateScreenFromUnitRect();
 
 	// Make a new behavior class instead of modify the original one.
-	if(m_EditBehaviorType == (int)EBehaviorType::BIND)
+	if(m_EditBehaviorType == EBehaviorType::BIND)
 	{
 		pTargetButton->m_pBehavior = std::make_unique<CTouchControls::CBindTouchButtonBehavior>(
 			m_vBehaviorElements[0]->m_CachedCommands.m_Label.c_str(),
 			m_vBehaviorElements[0]->m_CachedCommands.m_LabelType,
 			m_vBehaviorElements[0]->m_CachedCommands.m_Command.c_str());
 	}
-	else if(m_EditBehaviorType == (int)EBehaviorType::BIND_TOGGLE)
+	else if(m_EditBehaviorType == EBehaviorType::BIND_TOGGLE)
 	{
 		std::vector<CTouchControls::CBindToggleTouchButtonBehavior::CCommand> vMovingBehavior;
 		vMovingBehavior.reserve(m_vBehaviorElements.size());
@@ -1306,16 +1306,16 @@ void CMenusIngameTouchControls::SaveCachedSettingsToTarget(CTouchControls::CTouc
 			vMovingBehavior.emplace_back(Element->m_CachedCommands);
 		pTargetButton->m_pBehavior = std::make_unique<CTouchControls::CBindToggleTouchButtonBehavior>(std::move(vMovingBehavior));
 	}
-	else if(m_EditBehaviorType == (int)EBehaviorType::PREDEFINED)
+	else if(m_EditBehaviorType == EBehaviorType::PREDEFINED)
 	{
-		if(m_PredefinedBehaviorType == (int)EPredefinedType::EXTRA_MENU)
+		if(m_PredefinedBehaviorType == EPredefinedType::EXTRA_MENU)
 			pTargetButton->m_pBehavior = std::make_unique<CTouchControls::CExtraMenuTouchButtonBehavior>(CTouchControls::CExtraMenuTouchButtonBehavior(m_CachedExtraMenuNumber));
 		else
-			pTargetButton->m_pBehavior = BEHAVIOR_FACTORIES_EDITOR[m_PredefinedBehaviorType].m_Factory();
+			pTargetButton->m_pBehavior = BEHAVIOR_FACTORIES_EDITOR[(int)m_PredefinedBehaviorType].m_Factory();
 	}
 	else
 	{
-		dbg_assert(false, "Unknown m_EditBehaviorType = %d", m_EditBehaviorType);
+		dbg_assert(false, "Unknown m_EditBehaviorType = %d", (int)m_EditBehaviorType);
 	}
 	pTargetButton->UpdatePointers();
 }
