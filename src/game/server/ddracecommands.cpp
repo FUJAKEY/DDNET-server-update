@@ -22,8 +22,8 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	// Reject from in-game clients; allow only via rcon/server console
-	int CallerCid = pResult->GetClientId();
+        // Reject from in-game clients; allow only via rcon/server console
+        int CallerCid = pResult->m_ClientId;
 	if(CallerCid >= 0)
 	{
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "This command is available only via rcon.");
@@ -47,17 +47,9 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		str_append(aCmd, pResult->GetString(i), sizeof(aCmd));
 	}
 
-	// Derive caller auth level and temporarily set console access accordingly
-	int Authed = pSelf->Server()->GetAuthedState(CallerCid);
-	pSelf->Console()->SetAccessLevel(
-		Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN :
-		Authed == AUTHED_MOD   ? IConsole::ACCESS_LEVEL_MOD   :
-		IConsole::ACCESS_LEVEL_HELPER);
-
-	// Execute as if typed by TargetCid
+	// Execute with full admin privileges
+	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 	pSelf->Console()->ExecuteLine(aCmd, TargetCid, false);
-
-	// Restore to admin (pattern used in vote force path)
 	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 
 	char aBuf[128];
