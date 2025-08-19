@@ -4575,17 +4575,17 @@ void CGameContext::SnapFakePlayers(int SnappingClient)
                }
                else
                {
-                       protocol7::CNetObj_ClientInfo *pClientInfo = Server()->SnapNewItem<protocol7::CNetObj_ClientInfo>(ClientId);
+                       protocol7::CNetObj_De_ClientInfo *pClientInfo = Server()->SnapNewItem<protocol7::CNetObj_De_ClientInfo>(ClientId);
                        if(!pClientInfo)
                                continue;
                        pClientInfo->m_Local = 0;
                        pClientInfo->m_Team = Team;
-                       pClientInfo->m_pName = Names[i % NameCount].c_str();
-                       pClientInfo->m_pClan = "";
+                       StrToInts(pClientInfo->m_aName, std::size(pClientInfo->m_aName), Names[i % NameCount].c_str());
+                       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), "");
                        pClientInfo->m_Country = -1;
                        for(int p = 0; p < protocol7::NUM_SKINPARTS; p++)
                        {
-                               pClientInfo->m_apSkinPartNames[p] = "default";
+                               StrToInts(pClientInfo->m_aaSkinPartNames[p], std::size(pClientInfo->m_aaSkinPartNames[p]), "default");
                                pClientInfo->m_aUseCustomColors[p] = 0;
                                pClientInfo->m_aSkinPartColors[p] = 0;
                        }

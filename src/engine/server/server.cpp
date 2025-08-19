@@ -19,6 +19,7 @@
 #include <engine/shared/console.h>
 #include <engine/shared/demo.h>
 #include <game/server/gamecontext.h>
+#include <game/server/player.h>
 #include <engine/shared/econ.h>
 #include <engine/shared/fifo.h>
 #include <engine/shared/filecollection.h>
@@ -101,7 +102,6 @@ void CServer::UpdateFakePlayers(bool ForceDisconnect)
                         {
                                 int Team = pGameServer->FakeTeam();
                                 pPlayer->SetTeam(Team, false);
-                                pPlayer->m_Spawning = false;
                         }
                 }
                 else if(!Add && Client.m_FakePlayer)
