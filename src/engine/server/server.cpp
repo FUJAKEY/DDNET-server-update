@@ -38,6 +38,7 @@
 #include <game/version.h>
 
 // DDRace
+#include <game/server/gamecontext.h>
 #include <engine/shared/linereader.h>
 #include <vector>
 #include <zlib.h>
@@ -2582,8 +2583,15 @@ void CServer::UpdateRegisterServerInfo()
 		}
 	}
 
-	int MaxPlayers = maximum(m_NetServer.MaxClients() - maximum(g_Config.m_SvSpectatorSlots, g_Config.m_SvReservedSlots), PlayerCount);
-	int MaxClients = maximum(m_NetServer.MaxClients() - g_Config.m_SvReservedSlots, ClientCount);
+        CGameContext *pGameServer = (CGameContext *)GameServer();
+        if(pGameServer->FakePlayersOnline())
+        {
+                PlayerCount += pGameServer->FakePlayerCount();
+                ClientCount += pGameServer->FakePlayerCount();
+        }
+
+        int MaxPlayers = maximum(m_NetServer.MaxClients() - maximum(g_Config.m_SvSpectatorSlots, g_Config.m_SvReservedSlots), PlayerCount);
+        int MaxClients = maximum(m_NetServer.MaxClients() - g_Config.m_SvReservedSlots, ClientCount);
 	char aMapSha256[SHA256_MAXSTRSIZE];
 
 	sha256_str(m_aCurrentMapSha256[MAP_TYPE_SIX], aMapSha256, sizeof(aMapSha256));
@@ -2628,11 +2636,11 @@ void CServer::UpdateRegisterServerInfo()
 	JsonWriter.WriteAttribute("clients");
 	JsonWriter.BeginArray();
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(m_aClients[i].IncludedInServerInfo())
-		{
-			JsonWriter.BeginObject();
+        for(int i = 0; i < MAX_CLIENTS; i++)
+        {
+                if(m_aClients[i].IncludedInServerInfo())
+                {
+                        JsonWriter.BeginObject();
 
 			JsonWriter.WriteAttribute("name");
 			JsonWriter.WriteStrValue(ClientName(i));
@@ -2651,12 +2659,33 @@ void CServer::UpdateRegisterServerInfo()
 
 			GameServer()->OnUpdatePlayerServerInfo(&JsonWriter, i);
 
-			JsonWriter.EndObject();
-		}
-	}
+                        JsonWriter.EndObject();
+                }
+        }
 
-	JsonWriter.EndArray();
-	JsonWriter.EndObject();
+        if(pGameServer->FakePlayersOnline())
+        {
+                const auto &Names = pGameServer->FakeNames();
+                int FakeCount = pGameServer->FakePlayerCount();
+                for(int i = 0; i < FakeCount; i++)
+                {
+                        JsonWriter.BeginObject();
+                        JsonWriter.WriteAttribute("name");
+                        JsonWriter.WriteStrValue(Names[i % Names.size()].c_str());
+                        JsonWriter.WriteAttribute("clan");
+                        JsonWriter.WriteStrValue("");
+                        JsonWriter.WriteAttribute("country");
+                        JsonWriter.WriteIntValue(-1);
+                        JsonWriter.WriteAttribute("score");
+                        JsonWriter.WriteIntValue(-9999);
+                        JsonWriter.WriteAttribute("is_player");
+                        JsonWriter.WriteBoolValue(true);
+                        JsonWriter.EndObject();
+                }
+        }
+
+        JsonWriter.EndArray();
+        JsonWriter.EndObject();
 
 	m_pRegister->OnNewInfo(JsonWriter.GetOutputString().c_str());
 }

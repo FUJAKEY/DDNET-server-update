@@ -93,7 +93,11 @@ void CGameContext::Construct(int Resetting)
 
 	m_SqlRandomMapResult = nullptr;
 
-	m_pScore = nullptr;
+        m_pScore = nullptr;
+
+        m_FakePlayerCount = 0;
+        m_FakePlayersOnline = false;
+        m_FakeNames = {"Гейшасквад228", "Гандонсквад228", "мамарахалсквад228", "Пельмешсквад228", "Козаксквад228", "Борщсквад228", "Трупсквад228", "Злюксквад228", "Весёлыйсквад228", "Черепсквад228", "Дракондсквад228", "Гусьсквад228", "Тортиксквад228", "Пиксельсквад228", "Сосискасквад228", "Патисонсквад228", "Гаечкасквад228", "Носоксквад228"};
 
 	m_VoteCreator = -1;
 	m_VoteType = VOTE_TYPE_UNKNOWN;
@@ -3785,9 +3789,13 @@ void CGameContext::OnConsoleInit()
 	Console()->Chain("sv_vote_spectate", ConchainSettingUpdate, this);
 	Console()->Chain("sv_spectator_slots", ConchainSettingUpdate, this);
 
-	RegisterDDRaceCommands();
-	RegisterChatCommands();
-	Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER, ConAuthor, this, "Execute a command as another player (RCON only)");
+        RegisterDDRaceCommands();
+        RegisterChatCommands();
+        Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER, ConAuthor, this, "Execute a command as another player (admin only)");
+        Console()->Register("player_set", "i[count]", CFGFLAG_SERVER, ConPlayerSet, this, "Set fake player count (admin only)");
+        Console()->Register("player_set_reset", "", CFGFLAG_SERVER, ConPlayerSetReset, this, "Reset fake player count");
+        Console()->Register("player_set_plus", "i[count]", CFGFLAG_SERVER, ConPlayerSetPlus, this, "Increase fake player count");
+        Console()->Register("sv_player_set_online", "i[0|1]", CFGFLAG_SERVER, ConSvPlayerSetOnline, this, "Toggle showing fake players");
 }
 
 void CGameContext::RegisterDDRaceCommands()

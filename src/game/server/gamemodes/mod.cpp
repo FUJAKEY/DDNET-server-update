@@ -6,7 +6,7 @@
 // DM, TDM and CTF are reserved for teeworlds original modes.
 // DDraceNetwork and TestDDraceNetwork are used by DDNet.
 #define GAME_TYPE_NAME "Mod"
-#define TEST_TYPE_NAME "TestMod"
+#define TEST_TYPE_NAME "Gores"
 
 CGameControllerMod::CGameControllerMod(class CGameContext *pGameServer) :
 	IGameController(pGameServer)

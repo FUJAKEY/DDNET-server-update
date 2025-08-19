@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 /*
 	Tick
@@ -161,8 +162,12 @@ class CGameContext : public IGameServer
 	static void ConVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConVotes(IConsole::IResult *pResult, void *pUserData);
 	static void ConVoteNo(IConsole::IResult *pResult, void *pUserData);
-	static void ConDrySave(IConsole::IResult *pResult, void *pUserData);
-	static void ConAuthor(IConsole::IResult *pResult, void *pUserData);
+        static void ConDrySave(IConsole::IResult *pResult, void *pUserData);
+        static void ConAuthor(IConsole::IResult *pResult, void *pUserData);
+        static void ConPlayerSet(IConsole::IResult *pResult, void *pUserData);
+        static void ConPlayerSetReset(IConsole::IResult *pResult, void *pUserData);
+        static void ConPlayerSetPlus(IConsole::IResult *pResult, void *pUserData);
+        static void ConSvPlayerSetOnline(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConDumpAntibot(IConsole::IResult *pResult, void *pUserData);
 	static void ConAntibot(IConsole::IResult *pResult, void *pUserData);
@@ -403,15 +408,23 @@ public:
 	void OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int Id) override;
 	void ReadCensorList();
 
-	bool PracticeByDefault() const;
+        bool PracticeByDefault() const;
+
+        int FakePlayerCount() const { return m_FakePlayersOnline ? m_FakePlayerCount : 0; }
+        bool FakePlayersOnline() const { return m_FakePlayersOnline; }
+        const std::vector<std::string> &FakeNames() const { return m_FakeNames; }
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
 
 private:
-	// starting 1 to make 0 the special value "no client id"
-	uint32_t m_NextUniqueClientId = 1;
-	bool m_VoteWillPass;
-	CScore *m_pScore;
+        // starting 1 to make 0 the special value "no client id"
+        uint32_t m_NextUniqueClientId = 1;
+        bool m_VoteWillPass;
+        CScore *m_pScore;
+
+        int m_FakePlayerCount = 0;
+        bool m_FakePlayersOnline = false;
+        std::vector<std::string> m_FakeNames;
 
 	// DDRace Console Commands
 
