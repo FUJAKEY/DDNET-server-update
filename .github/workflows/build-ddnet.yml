@@ -1,0 +1,5 @@
+name: Build DDNet-Server
+on:
+  workflow_dispatch:      # даст кнопку Run
+  push:                   # запустится от любого коммита
+    branches: [ main ]    # или твоя ветка
