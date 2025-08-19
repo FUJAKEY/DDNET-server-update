@@ -22,8 +22,8 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	// Reject from in-game clients; allow only via rcon/server console
-	int CallerCid = pResult->GetClientId();
+        // Reject from in-game clients; allow only via rcon/server console
+        int CallerCid = pResult->m_ClientId;
 	if(CallerCid >= 0)
 	{
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "This command is available only via rcon.");
