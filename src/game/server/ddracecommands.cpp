@@ -1,6 +1,7 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
 #include "gamecontext.h"
 
+#include <base/math.h>
 #include <engine/antibot.h>
 
 #include <engine/shared/config.h>
@@ -22,11 +23,11 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-        // Reject from in-game clients; allow only via rcon/server console
-        int CallerCid = pResult->m_ClientId;
-	if(CallerCid >= 0)
+	// Allow execution from rcon/econ, but restrict in-game usage to admins
+	int CallerCid = pResult->m_ClientId;
+	if(CallerCid >= 0 && pSelf->Server()->GetAuthedState(CallerCid) != AUTHED_ADMIN)
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "This command is available only via rcon.");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "Only admins can use this command.");
 		return;
 	}
 
@@ -48,9 +49,16 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 	}
 
 	// Execute with full admin privileges
+	int OldLevel = IConsole::ACCESS_LEVEL_ADMIN;
+	if(CallerCid >= 0)
+	{
+		int AuthLevel = pSelf->Server()->GetAuthedState(CallerCid);
+		OldLevel = AuthLevel == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN :
+		AuthLevel == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER;
+	}
 	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 	pSelf->Console()->ExecuteLine(aCmd, TargetCid, false);
-	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
+	pSelf->Console()->SetAccessLevel(OldLevel);
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Executed as cid=%d: %s", TargetCid, aCmd);
@@ -670,13 +678,90 @@ void CGameContext::ConDumpLog(IConsole::IResult *pResult, void *pUserData)
 		else
 			str_format(aBuf, sizeof(aBuf), "%s, %d seconds ago < addr=<{%s}> name='%s' client=%d",
 				pEntry->m_aDescription, Seconds, pEntry->m_aClientAddrStr, pEntry->m_aClientName, pEntry->m_ClientVersion);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "log", aBuf);
-	}
+                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "log", aBuf);
+        }
+}
+
+void CGameContext::ConPlayerSet(IConsole::IResult *pResult, void *pUserData)
+{
+        CGameContext *pSelf = (CGameContext *)pUserData;
+        if(pResult->m_ClientId >= 0 && pSelf->Server()->GetAuthedState(pResult->m_ClientId) != AUTHED_ADMIN)
+        {
+                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "player_set", "Only admins can use this command.");
+                return;
+        }
+        int Count = pResult->GetInteger(0);
+        pSelf->m_FakePlayerCount = maximum(0, Count);
+        pSelf->m_FakePlayersOnline = true;
+        pSelf->DetermineFakeTeam();
+        pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
+        pSelf->Server()->ExpireServerInfo();
+}
+
+void CGameContext::ConPlayerSetReset(IConsole::IResult *pResult, void *pUserData)
+{
+        CGameContext *pSelf = (CGameContext *)pUserData;
+        if(pResult->m_ClientId >= 0 && pSelf->Server()->GetAuthedState(pResult->m_ClientId) != AUTHED_ADMIN)
+        {
+                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "player_set_reset", "Only admins can use this command.");
+                return;
+        }
+        pSelf->m_FakePlayerCount = 0;
+        pSelf->m_FakePlayersOnline = false;
+        pSelf->Server()->SetFakePlayerCount(0);
+        if(pSelf->m_FakeTeam != -1)
+        {
+                pSelf->m_pController->Teams().SetTeamLock(pSelf->m_FakeTeam, false);
+                pSelf->m_FakeTeam = -1;
+        }
+        pSelf->Server()->ExpireServerInfo();
+}
+
+void CGameContext::ConPlayerSetPlus(IConsole::IResult *pResult, void *pUserData)
+{
+        CGameContext *pSelf = (CGameContext *)pUserData;
+        if(pResult->m_ClientId >= 0 && pSelf->Server()->GetAuthedState(pResult->m_ClientId) != AUTHED_ADMIN)
+        {
+                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "player_set_plus", "Only admins can use this command.");
+                return;
+        }
+        int Add = pResult->GetInteger(0);
+        pSelf->m_FakePlayerCount = maximum(0, pSelf->m_FakePlayerCount + Add);
+        pSelf->m_FakePlayersOnline = true;
+        pSelf->DetermineFakeTeam();
+        pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
+        pSelf->Server()->ExpireServerInfo();
+}
+
+void CGameContext::ConSvPlayerSetOnline(IConsole::IResult *pResult, void *pUserData)
+{
+        CGameContext *pSelf = (CGameContext *)pUserData;
+        if(pResult->m_ClientId >= 0 && pSelf->Server()->GetAuthedState(pResult->m_ClientId) != AUTHED_ADMIN)
+        {
+                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sv_player_set_online", "Only admins can use this command.");
+                return;
+        }
+        pSelf->m_FakePlayersOnline = pResult->GetInteger(0) != 0;
+        if(pSelf->m_FakePlayersOnline)
+        {
+                pSelf->DetermineFakeTeam();
+                pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
+        }
+        else
+        {
+                pSelf->Server()->SetFakePlayerCount(0);
+                if(pSelf->m_FakeTeam != -1)
+                {
+                        pSelf->m_pController->Teams().SetTeamLock(pSelf->m_FakeTeam, false);
+                        pSelf->m_FakeTeam = -1;
+                }
+        }
+        pSelf->Server()->ExpireServerInfo();
 }
 
 void CGameContext::LogEvent(const char *Description, int ClientId)
 {
-	CLog *pNewEntry = &m_aLogs[m_LatestLog];
+        CLog *pNewEntry = &m_aLogs[m_LatestLog];
 	m_LatestLog = (m_LatestLog + 1) % MAX_LOGS;
 
 	pNewEntry->m_Timestamp = time_get();
