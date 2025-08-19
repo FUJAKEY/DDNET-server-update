@@ -4526,22 +4526,84 @@ void CGameContext::OnSnap(int ClientId, bool GlobalSnap)
                        pPlayer->Snap(ClientId);
        }
 
+       if(FakePlayersOnline())
+               SnapFakePlayers(ClientId);
+
        if(ClientId > -1)
                m_apPlayers[ClientId]->FakeSnap();
 
 	m_World.Snap(ClientId);
 
 	// events are only sent on global snapshots
-        if(GlobalSnap)
-        {
-                m_Events.Snap(ClientId);
-        }
+       if(GlobalSnap)
+       {
+               m_Events.Snap(ClientId);
+       }
+}
+
+void CGameContext::SnapFakePlayers(int SnappingClient)
+{
+       const auto &Names = m_FakeNames;
+       int NameCount = Names.size();
+       int Team = FakeTeam();
+
+       for(int i = 0; i < m_FakePlayerCount; ++i)
+       {
+               int ClientId = Server()->MaxClients() - i - 1;
+
+               if(!Server()->IsSixup(SnappingClient))
+               {
+                       CNetObj_ClientInfo *pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(ClientId);
+                       if(!pClientInfo)
+                               continue;
+                       StrToInts(pClientInfo->m_aName, std::size(pClientInfo->m_aName), Names[i % NameCount].c_str());
+                       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), "");
+                       pClientInfo->m_Country = -1;
+                       StrToInts(pClientInfo->m_aSkin, std::size(pClientInfo->m_aSkin), "default");
+                       pClientInfo->m_UseCustomColor = 0;
+                       pClientInfo->m_ColorBody = 0;
+                       pClientInfo->m_ColorFeet = 0;
+
+                       CNetObj_PlayerInfo *pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(ClientId);
+                       if(!pPlayerInfo)
+                               continue;
+                       pPlayerInfo->m_Latency = 0;
+                       pPlayerInfo->m_Local = 0;
+                       pPlayerInfo->m_ClientId = ClientId;
+                       pPlayerInfo->m_Score = -9999;
+                       pPlayerInfo->m_Team = Team;
+               }
+               else
+               {
+                       protocol7::CNetObj_ClientInfo *pClientInfo = Server()->SnapNewItem<protocol7::CNetObj_ClientInfo>(ClientId);
+                       if(!pClientInfo)
+                               continue;
+                       pClientInfo->m_Local = 0;
+                       pClientInfo->m_Team = Team;
+                       pClientInfo->m_pName = Names[i % NameCount].c_str();
+                       pClientInfo->m_pClan = "";
+                       pClientInfo->m_Country = -1;
+                       for(int p = 0; p < protocol7::NUM_SKINPARTS; p++)
+                       {
+                               pClientInfo->m_apSkinPartNames[p] = "default";
+                               pClientInfo->m_aUseCustomColors[p] = 0;
+                               pClientInfo->m_aSkinPartColors[p] = 0;
+                       }
+
+                       protocol7::CNetObj_PlayerInfo *pPlayerInfo = Server()->SnapNewItem<protocol7::CNetObj_PlayerInfo>(ClientId);
+                       if(!pPlayerInfo)
+                               continue;
+                       pPlayerInfo->m_PlayerFlags = 0;
+                       pPlayerInfo->m_Score = -1;
+                       pPlayerInfo->m_Latency = 0;
+               }
+       }
 }
 
 void CGameContext::DetermineFakeTeam()
 {
-        if(m_FakeTeam != -1 && m_pController->Teams().Count(m_FakeTeam) > 0)
-                return;
+       if(m_FakeTeam != -1 && m_pController->Teams().Count(m_FakeTeam) > 0)
+               return;
 
         int Team = 57;
         if(m_pController->Teams().Count(Team) != 0)

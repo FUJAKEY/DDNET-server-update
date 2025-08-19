@@ -414,7 +414,8 @@ public:
         bool FakePlayersOnline() const { return m_FakePlayersOnline; }
         const std::vector<std::string> &FakeNames() const { return m_FakeNames; }
         int FakeTeam() const { return m_FakeTeam; }
-        void DetermineFakeTeam();
+       void DetermineFakeTeam();
+       void SnapFakePlayers(int SnappingClient);
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
 
