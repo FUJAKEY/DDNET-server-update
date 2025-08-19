@@ -22,11 +22,11 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-        // Reject from in-game clients; allow only via rcon/server console
-        int CallerCid = pResult->m_ClientId;
-	if(CallerCid >= 0)
+	// Allow execution from rcon/econ, but restrict in-game usage to admins
+	int CallerCid = pResult->m_ClientId;
+	if(CallerCid >= 0 && pSelf->Server()->GetAuthedState(CallerCid) != AUTHED_ADMIN)
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "This command is available only via rcon.");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "Only admins can use this command.");
 		return;
 	}
 
@@ -48,9 +48,16 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 	}
 
 	// Execute with full admin privileges
+	int OldLevel = IConsole::ACCESS_LEVEL_ADMIN;
+	if(CallerCid >= 0)
+	{
+		int AuthLevel = pSelf->Server()->GetAuthedState(CallerCid);
+		OldLevel = AuthLevel == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN :
+		AuthLevel == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER;
+	}
 	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 	pSelf->Console()->ExecuteLine(aCmd, TargetCid, false);
-	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
+	pSelf->Console()->SetAccessLevel(OldLevel);
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Executed as cid=%d: %s", TargetCid, aCmd);

@@ -3787,7 +3787,7 @@ void CGameContext::OnConsoleInit()
 
 	RegisterDDRaceCommands();
 	RegisterChatCommands();
-	Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER, ConAuthor, this, "Execute a command as another player (RCON only)");
+        Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER, ConAuthor, this, "Execute a command as another player (admin only)");
 }
 
 void CGameContext::RegisterDDRaceCommands()
