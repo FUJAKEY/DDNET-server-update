@@ -431,6 +431,7 @@ private:
        int m_FakeTeam = -1;
        std::vector<std::string> m_FakeNames;
        std::vector<int> m_FakePings;
+       int m_FakePingTick = 0;
 
 	// DDRace Console Commands
 

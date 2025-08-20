@@ -98,9 +98,10 @@ void CGameContext::Construct(int Resetting)
 
         m_FakePlayerCount = 0;
         m_FakePlayersOnline = false;
-        m_FakeTeam = -1;
+       m_FakeTeam = -1;
        m_FakeNames = {"Гейшасквад228", "Гандонсквад228", "мамарахалсквад228", "Пельмешсквад228", "Козаксквад228", "Борщсквад228", "Трупсквад228", "Злюксквад228", "Весёлыйсквад228", "Черепсквад228", "Дракондсквад228", "Гусьсквад228", "Тортиксквад228", "Пиксельсквад228", "Сосискасквад228", "Патисонсквад228", "Гаечкасквад228", "Носоксквад228"};
        m_FakePings.clear();
+       m_FakePingTick = 0;
 
 	m_VoteCreator = -1;
 	m_VoteType = VOTE_TYPE_UNKNOWN;
@@ -4551,6 +4552,13 @@ void CGameContext::SnapFakePlayers(int SnappingClient)
        // игроки корректно отображались в табе.
        const int Team = TEAM_RED;
 
+       bool UpdatePing = false;
+       if(Server()->Tick() >= m_FakePingTick)
+       {
+               m_FakePingTick = Server()->Tick() + Server()->TickSpeed() * 2;
+               UpdatePing = true;
+       }
+
        for(int i = 0; i < m_FakePlayerCount; ++i)
        {
                int ClientId = Server()->MaxClients() - i - 1;
@@ -4558,9 +4566,12 @@ void CGameContext::SnapFakePlayers(int SnappingClient)
                if(i < (int)m_FakePings.size())
                {
                        Ping = m_FakePings[i];
-                       Ping += (secure_rand() % 11) - 5;
-                       Ping = maximum(70, minimum(100, Ping));
-                       m_FakePings[i] = Ping;
+                       if(UpdatePing)
+                       {
+                               Ping += (secure_rand() % 11) - 5;
+                               Ping = maximum(70, minimum(100, Ping));
+                               m_FakePings[i] = Ping;
+                       }
                }
 
                if(!Server()->IsSixup(SnappingClient))
@@ -4647,6 +4658,8 @@ void CGameContext::RefreshFakePlayers()
                int ClientId = Server()->MaxClients() - i - 1;
                m_pController->Teams().SetForceCharacterTeam(ClientId, m_FakeTeam);
        }
+
+       m_FakePingTick = Server()->Tick() + Server()->TickSpeed() * 2;
 }
 
 void CGameContext::DetermineFakeTeam()
