@@ -241,15 +241,26 @@ void CPlayer::Tick()
                                ProcessPause();
                                if(!m_Paused)
                                        m_ViewPos = m_pCharacter->m_Pos;
-                               if(m_ActiveCosmetic == 1 && Server()->Tick() % 20 == 0)
-                                       GameServer()->CreatePlayerSpawn(m_pCharacter->m_Pos, GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId));
+                               if(Server()->Tick() % 20 == 0)
+                               {
+                                       CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
+                                       if(m_ActiveCosmetic == 1)
+                                       {
+                                               GameServer()->CreatePlayerSpawn(m_pCharacter->m_Pos, Mask);
+                                               GameServer()->CreateSound(m_pCharacter->m_Pos, SOUND_PLAYER_SPAWN, Mask);
+                                       }
+                                       else if(m_ActiveCosmetic == 2)
+                                       {
+                                               GameServer()->CreateDeath(m_pCharacter->m_Pos, m_ClientId, Mask);
+                                       }
+                               }
                        }
                        else if(!m_pCharacter->IsPaused())
                        {
                                delete m_pCharacter;
                                m_pCharacter = nullptr;
-			}
-		}
+                        }
+               }
 		else if(m_Spawning && !m_WeakHookSpawn)
 			TryRespawn();
 	}
@@ -1039,15 +1050,20 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			GameServer()->SendRecord(m_ClientId);
 			break;
 		}
-		case CScorePlayerResult::PLAYER_TIMECP:
-			GameServer()->Score()->PlayerData(m_ClientId)->SetBestTimeCp(Result.m_Data.m_Info.m_aTimeCp);
-			char aBuf[128], aTime[32];
-			str_time_float(Result.m_Data.m_Info.m_Time.value(), TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
-			str_format(aBuf, sizeof(aBuf), "Showing the checkpoint times for '%s' with a race time of %s", Result.m_Data.m_Info.m_aRequestedPlayer, aTime);
-			GameServer()->SendChatTarget(m_ClientId, aBuf);
-			break;
-		}
-	}
+               case CScorePlayerResult::PLAYER_TIMECP:
+                       GameServer()->Score()->PlayerData(m_ClientId)->SetBestTimeCp(Result.m_Data.m_Info.m_aTimeCp);
+                       char aBuf[128], aTime[32];
+                       str_time_float(Result.m_Data.m_Info.m_Time.value(), TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+                       str_format(aBuf, sizeof(aBuf), "Showing the checkpoint times for '%s' with a race time of %s", Result.m_Data.m_Info.m_aRequestedPlayer, aTime);
+                       GameServer()->SendChatTarget(m_ClientId, aBuf);
+                       break;
+               case CScorePlayerResult::BOBUCKS:
+                       m_Bobucks = Result.m_Data.m_BobucksInfo.m_Bobucks;
+                       m_CosmeticsOwned = Result.m_Data.m_BobucksInfo.m_Cosmetics;
+                       m_ActiveCosmetic = Result.m_Data.m_BobucksInfo.m_ActiveCosmetic;
+                       break;
+               }
+       }
 }
 
 vec2 CPlayer::CCameraInfo::ConvertTargetToWorld(vec2 Position, vec2 Target) const

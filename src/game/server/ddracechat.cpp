@@ -51,6 +51,7 @@ void CGameContext::ConCosmetics(IConsole::IResult *pResult, void *pUserData)
        if(!CheckClientId(ClientId))
                return;
        pSelf->SendChatTarget(ClientId, "1. Freeze particles - 3000 bobucks");
+       pSelf->SendChatTarget(ClientId, "2. Death particles - 5000 bobucks");
        pSelf->SendChatTarget(ClientId, "Earn 1000 bobucks per finish and 2000 for beating your record.");
        pSelf->SendChatTarget(ClientId, "Purchase with /buy <number>");
 }
@@ -65,6 +66,7 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
        if(!pPl)
                return;
        int Num = pResult->GetInteger(0);
+       const char *pName = pSelf->Server()->ClientName(ClientId);
        if(Num == 1)
        {
                const int Cost = 3000;
@@ -80,13 +82,29 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
                }
                pPl->m_Bobucks -= Cost;
                pPl->m_CosmeticsOwned |= 1;
-               CGameContext::CBobuckAccount &Acc = pSelf->m_BobuckAccounts[pSelf->Server()->ClientName(ClientId)];
-               Acc.m_Bobucks = pPl->m_Bobucks;
-               Acc.m_Cosmetics = pPl->m_CosmeticsOwned;
-               Acc.m_ActiveCosmetic = pPl->m_ActiveCosmetic;
-               pSelf->SaveBobucks();
+               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
                char aBuf[128];
                str_format(aBuf, sizeof(aBuf), "Purchased Freeze particles. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
+               pSelf->SendChatTarget(ClientId, aBuf);
+       }
+       else if(Num == 2)
+       {
+               const int Cost = 5000;
+               if(pPl->m_CosmeticsOwned & 2)
+               {
+                       pSelf->SendChatTarget(ClientId, "You already own this cosmetic.");
+                       return;
+               }
+               if(pPl->m_Bobucks < Cost)
+               {
+                       pSelf->SendChatTarget(ClientId, "Not enough bobucks.");
+                       return;
+               }
+               pPl->m_Bobucks -= Cost;
+               pPl->m_CosmeticsOwned |= 2;
+               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               char aBuf[128];
+               str_format(aBuf, sizeof(aBuf), "Purchased Death particles. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
                pSelf->SendChatTarget(ClientId, aBuf);
        }
        else
@@ -121,6 +139,11 @@ void CGameContext::ConInventory(IConsole::IResult *pResult, void *pUserData)
                pSelf->SendChatTarget(ClientId, "1. Freeze particles - use with /use 1");
                HasAny = true;
        }
+       if(pPl->m_CosmeticsOwned & 2)
+       {
+               pSelf->SendChatTarget(ClientId, "2. Death particles - use with /use 2");
+               HasAny = true;
+       }
        if(!HasAny)
        {
                pSelf->SendChatTarget(ClientId, "You don't own any cosmetics.");
@@ -143,12 +166,11 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
        if(!pPl)
                return;
        int Num = pResult->GetInteger(0);
+       const char *pName2 = pSelf->Server()->ClientName(ClientId);
        if(Num == 0)
        {
                pPl->m_ActiveCosmetic = 0;
-               CGameContext::CBobuckAccount &Acc = pSelf->m_BobuckAccounts[pSelf->Server()->ClientName(ClientId)];
-               Acc.m_ActiveCosmetic = 0;
-               pSelf->SaveBobucks();
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
                pSelf->SendChatTarget(ClientId, "Cosmetics cleared.");
                return;
        }
@@ -160,10 +182,20 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
                        return;
                }
                pPl->m_ActiveCosmetic = 1;
-               CGameContext::CBobuckAccount &Acc = pSelf->m_BobuckAccounts[pSelf->Server()->ClientName(ClientId)];
-               Acc.m_ActiveCosmetic = 1;
-               pSelf->SaveBobucks();
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
                pSelf->SendChatTarget(ClientId, "Using Freeze particles.");
+               return;
+       }
+       if(Num == 2)
+       {
+               if(!(pPl->m_CosmeticsOwned & 2))
+               {
+                       pSelf->SendChatTarget(ClientId, "You don't own this cosmetic.");
+                       return;
+               }
+               pPl->m_ActiveCosmetic = 2;
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pSelf->SendChatTarget(ClientId, "Using Death particles.");
                return;
        }
        pSelf->SendChatTarget(ClientId, "Unknown cosmetic.");

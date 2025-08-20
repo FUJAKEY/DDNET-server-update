@@ -63,14 +63,17 @@ public:
 	void ShowPoints(int ClientId, const char *pName);
 
 	void ShowTimes(int ClientId, const char *pName, int Offset = 1);
-	void ShowTimes(int ClientId, int Offset = 1);
+        void ShowTimes(int ClientId, int Offset = 1);
 
-	void RandomMap(int ClientId, int Stars);
-	void RandomUnfinishedMap(int ClientId, int Stars);
+        void RandomMap(int ClientId, int Stars);
+        void RandomUnfinishedMap(int ClientId, int Stars);
 
-	void SaveTeam(int ClientId, const char *pCode, const char *pServer);
-	void LoadTeam(const char *pCode, int ClientId);
-	void GetSaves(int ClientId);
+        void SaveTeam(int ClientId, const char *pCode, const char *pServer);
+        void LoadTeam(const char *pCode, int ClientId);
+        void GetSaves(int ClientId);
+
+       void SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int Active);
+       void LoadBobucks(int ClientId, const char *pName);
 };
 
 #endif // GAME_SERVER_SCORE_H

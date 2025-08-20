@@ -380,7 +380,27 @@ void CScore::LoadTeam(const char *pCode, int ClientId)
 
 void CScore::GetSaves(int ClientId)
 {
-	if(RateLimitPlayer(ClientId))
-		return;
-	ExecPlayerThread(CScoreWorker::GetSaves, "get saves", ClientId, "", 0);
+        if(RateLimitPlayer(ClientId))
+                return;
+        ExecPlayerThread(CScoreWorker::GetSaves, "get saves", ClientId, "", 0);
+}
+
+void CScore::SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int Active)
+{
+       auto Tmp = std::make_unique<CSqlBobucksSave>();
+       str_copy(Tmp->m_aName, pName, sizeof(Tmp->m_aName));
+       Tmp->m_Bobucks = Bobucks;
+       Tmp->m_Cosmetics = Cosmetics;
+       Tmp->m_ActiveCosmetic = Active;
+       m_pPool->ExecuteWrite(CScoreWorker::SaveBobucks, std::move(Tmp), "save bobucks");
+}
+
+void CScore::LoadBobucks(int ClientId, const char *pName)
+{
+       auto pResult = NewSqlPlayerResult(ClientId);
+       if(pResult == nullptr)
+               return;
+       auto Tmp = std::make_unique<CSqlBobucksRequest>(pResult);
+       str_copy(Tmp->m_aName, pName, sizeof(Tmp->m_aName));
+       m_pPool->Execute(CScoreWorker::LoadBobucks, std::move(Tmp), "load bobucks");
 }

@@ -435,16 +435,6 @@ private:
        std::vector<int> m_FakePings;
        int m_FakePingTick = 0;
 
-       struct CBobuckAccount
-       {
-               int m_Bobucks;
-               int m_Cosmetics;
-               int m_ActiveCosmetic;
-       };
-       std::map<std::string, CBobuckAccount> m_BobuckAccounts;
-       void LoadBobucks();
-       void SaveBobucks();
-
         // DDRace Console Commands
 
 	static void ConKillPlayer(IConsole::IResult *pResult, void *pUserData);

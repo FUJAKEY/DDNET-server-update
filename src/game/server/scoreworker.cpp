@@ -44,13 +44,18 @@ void CScorePlayerResult::SetVariant(Variant v)
 		for(float &TimeCp : m_Data.m_Info.m_aTimeCp)
 			TimeCp = 0;
 		break;
-	case PLAYER_TIMECP:
-		m_Data.m_Info.m_aRequestedPlayer[0] = '\0';
-		m_Data.m_Info.m_Time.reset();
-		for(float &TimeCp : m_Data.m_Info.m_aTimeCp)
-			TimeCp = 0;
-		break;
-	}
+       case PLAYER_TIMECP:
+               m_Data.m_Info.m_aRequestedPlayer[0] = '\0';
+               m_Data.m_Info.m_Time.reset();
+               for(float &TimeCp : m_Data.m_Info.m_aTimeCp)
+                       TimeCp = 0;
+               break;
+       case BOBUCKS:
+               m_Data.m_BobucksInfo.m_Bobucks = 0;
+               m_Data.m_BobucksInfo.m_Cosmetics = 0;
+               m_Data.m_BobucksInfo.m_ActiveCosmetic = 0;
+               break;
+       }
 }
 
 CTeamrank::CTeamrank() :
@@ -816,6 +821,60 @@ bool CScoreWorker::SaveTeamScore(IDbConnection *pSqlServer, const ISqlData *pGam
 		}
 	}
 	return true;
+}
+
+bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize)
+{
+       const auto *pData = dynamic_cast<const CSqlBobucksSave *>(pGameData);
+       char aBuf[256];
+       str_format(aBuf, sizeof(aBuf),
+               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
+               pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
+       if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+               return true;
+       if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
+               return true;
+
+       str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetic) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
+       if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+               return true;
+       pSqlServer->BindString(1, pData->m_aName);
+       pSqlServer->BindInt(2, pData->m_Bobucks);
+       pSqlServer->BindInt(3, pData->m_Cosmetics);
+       pSqlServer->BindInt(4, pData->m_ActiveCosmetic);
+       if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
+               return true;
+       return false;
+}
+
+bool CScoreWorker::LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
+{
+       const auto *pData = dynamic_cast<const CSqlBobucksRequest *>(pGameData);
+       auto *pResult = dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get());
+       pResult->SetVariant(CScorePlayerResult::BOBUCKS);
+       char aBuf[256];
+       str_format(aBuf, sizeof(aBuf),
+               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
+               pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
+       if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+               return true;
+       if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
+               return true;
+
+       str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetic FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
+       if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+               return true;
+       pSqlServer->BindString(1, pData->m_aName);
+       bool End;
+       if(!pSqlServer->Step(&End, pError, ErrorSize))
+               return true;
+       if(!End)
+       {
+               pResult->m_Data.m_BobucksInfo.m_Bobucks = pSqlServer->GetInt(1);
+               pResult->m_Data.m_BobucksInfo.m_Cosmetics = pSqlServer->GetInt(2);
+               pResult->m_Data.m_BobucksInfo.m_ActiveCosmetic = pSqlServer->GetInt(3);
+       }
+       return false;
 }
 
 bool CScoreWorker::ShowRank(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
