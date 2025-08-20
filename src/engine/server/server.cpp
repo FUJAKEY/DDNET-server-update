@@ -57,60 +57,10 @@ extern std::vector<std::string> FetchAndroidServerCommandQueue();
 
 void CServer::UpdateFakePlayers(bool ForceDisconnect)
 {
-        if(m_PreviousFakePlayerCount == m_FakePlayerCount && !ForceDisconnect)
-                return;
+       if(ForceDisconnect)
+               m_FakePlayerCount = 0;
 
-        m_FakePlayerCount = std::clamp(m_FakePlayerCount, 0, MaxClients());
-        CGameContext *pGameServer = (CGameContext *)GameServer();
-        const auto &Names = pGameServer->FakeNames();
-        int NameCount = Names.size();
-
-        for(int Index = 0; Index < maximum(m_PreviousFakePlayerCount, m_FakePlayerCount); ++Index)
-        {
-                bool Add = !ForceDisconnect && Index < m_FakePlayerCount;
-                int ClientId = MaxClients() - Index - 1;
-                CClient &Client = m_aClients[ClientId];
-
-                if(Add && Client.m_State == CClient::STATE_EMPTY)
-                {
-                        NewClientCallback(ClientId, this, false);
-                        Client.m_DebugDummy = true;
-                        Client.m_FakePlayer = true;
-
-                        Client.m_DebugDummyAddr.type = NETTYPE_IPV6;
-                        Client.m_DebugDummyAddr.ip[0] = 0xfd;
-                        secure_random_fill(&Client.m_DebugDummyAddr.ip[1], 5);
-                        Client.m_DebugDummyAddr.ip[6] = 0xc0;
-                        Client.m_DebugDummyAddr.ip[7] = 0xde;
-                        Client.m_DebugDummyAddr.ip[8] = 0x00;
-                        Client.m_DebugDummyAddr.ip[9] = 0x00;
-                        Client.m_DebugDummyAddr.ip[10] = 0x00;
-                        Client.m_DebugDummyAddr.ip[11] = 0x00;
-                        uint_to_bytes_be(&Client.m_DebugDummyAddr.ip[12], ClientId);
-                        Client.m_DebugDummyAddr.port = (secure_rand() % (65535 - 1024)) + 1024;
-                        net_addr_str(&Client.m_DebugDummyAddr, Client.m_aDebugDummyAddrString.data(), Client.m_aDebugDummyAddrString.size(), true);
-                        net_addr_str(&Client.m_DebugDummyAddr, Client.m_aDebugDummyAddrStringNoPort.data(), Client.m_aDebugDummyAddrStringNoPort.size(), false);
-
-                       pGameServer->OnClientConnected(ClientId, nullptr);
-                       Client.m_State = CClient::STATE_INGAME;
-                       str_copy(Client.m_aName, Names[Index % NameCount].c_str());
-                }
-                else if(!Add && Client.m_FakePlayer)
-                {
-                        DelClientCallback(ClientId, "Dropping fake player", this);
-                }
-
-                if(Add && Client.m_FakePlayer)
-                {
-                        CNetObj_PlayerInput Input = {0};
-                        Client.m_aInputs[0].m_GameTick = Tick() + 1;
-                        mem_copy(Client.m_aInputs[0].m_aData, &Input, minimum(sizeof(Input), sizeof(Client.m_aInputs[0].m_aData)));
-                        Client.m_LatestInput = Client.m_aInputs[0];
-                        Client.m_CurrentInput = 0;
-                }
-        }
-
-        m_PreviousFakePlayerCount = ForceDisconnect ? 0 : m_FakePlayerCount;
+       m_FakePlayerCount = std::clamp(m_FakePlayerCount, 0, MaxClients());
 }
 
 void CServer::SetFakePlayerCount(int Count)
@@ -291,8 +241,7 @@ void CServer::CClient::Reset()
         m_NextMapChunk = 0;
         m_Flags = 0;
         m_RedirectDropTime = 0;
-        m_DebugDummy = false;
-        m_FakePlayer = false;
+       m_DebugDummy = false;
 }
 
 CServer::CServer()
@@ -323,8 +272,7 @@ CServer::CServer()
         m_pCurrentMapName = m_aCurrentMap;
         m_aMapDownloadUrl[0] = '\0';
 
-        m_FakePlayerCount = 0;
-        m_PreviousFakePlayerCount = 0;
+       m_FakePlayerCount = 0;
 
         m_RconClientId = IServer::RCON_CID_SERV;
 	m_RconAuthLevel = AUTHED_ADMIN;
@@ -637,23 +585,22 @@ int64_t CServer::TickStartTime(int Tick)
 
 int CServer::Init()
 {
-	for(auto &Client : m_aClients)
-	{
-		Client.m_State = CClient::STATE_EMPTY;
-		Client.m_aName[0] = 0;
-		Client.m_aClan[0] = 0;
-		Client.m_Country = -1;
-		Client.m_Snapshots.Init();
-		Client.m_Traffic = 0;
-		Client.m_TrafficSince = 0;
-                Client.m_ShowIps = false;
-                Client.m_DebugDummy = false;
-                Client.m_FakePlayer = false;
-                Client.m_AuthKey = -1;
-		Client.m_Latency = 0;
-		Client.m_Sixup = false;
-		Client.m_RedirectDropTime = 0;
-	}
+       for(auto &Client : m_aClients)
+       {
+               Client.m_State = CClient::STATE_EMPTY;
+               Client.m_aName[0] = 0;
+               Client.m_aClan[0] = 0;
+               Client.m_Country = -1;
+               Client.m_Snapshots.Init();
+               Client.m_Traffic = 0;
+               Client.m_TrafficSince = 0;
+               Client.m_ShowIps = false;
+               Client.m_DebugDummy = false;
+               Client.m_AuthKey = -1;
+               Client.m_Latency = 0;
+               Client.m_Sixup = false;
+               Client.m_RedirectDropTime = 0;
+       }
 
 	m_CurrentGameTick = MIN_TICK;
 
@@ -743,15 +690,12 @@ const NETADDR *CServer::ClientAddr(int ClientId) const
 {
 	dbg_assert(ClientId >= 0 && ClientId < MAX_CLIENTS, "ClientId is not valid");
 	dbg_assert(m_aClients[ClientId].m_State != CServer::CClient::STATE_EMPTY, "Client slot is empty");
-        if(m_aClients[ClientId].m_FakePlayer)
-        {
-                return &m_aClients[ClientId].m_DebugDummyAddr;
-        }
+       
 #ifdef CONF_DEBUG
-        if(m_aClients[ClientId].m_DebugDummy)
-        {
-                return &m_aClients[ClientId].m_DebugDummyAddr;
-        }
+       if(m_aClients[ClientId].m_DebugDummy)
+       {
+               return &m_aClients[ClientId].m_DebugDummyAddr;
+       }
 #endif
         return m_NetServer.ClientAddr(ClientId);
 }
@@ -760,15 +704,12 @@ const std::array<char, NETADDR_MAXSTRSIZE> &CServer::ClientAddrStringImpl(int Cl
 {
 	dbg_assert(ClientId >= 0 && ClientId < MAX_CLIENTS, "ClientId is not valid");
 	dbg_assert(m_aClients[ClientId].m_State != CServer::CClient::STATE_EMPTY, "Client slot is empty");
-        if(m_aClients[ClientId].m_FakePlayer)
-        {
-                return IncludePort ? m_aClients[ClientId].m_aDebugDummyAddrString : m_aClients[ClientId].m_aDebugDummyAddrStringNoPort;
-        }
+       
 #ifdef CONF_DEBUG
-        if(m_aClients[ClientId].m_DebugDummy)
-        {
-                return IncludePort ? m_aClients[ClientId].m_aDebugDummyAddrString : m_aClients[ClientId].m_aDebugDummyAddrStringNoPort;
-        }
+       if(m_aClients[ClientId].m_DebugDummy)
+       {
+               return IncludePort ? m_aClients[ClientId].m_aDebugDummyAddrString : m_aClients[ClientId].m_aDebugDummyAddrStringNoPort;
+       }
 #endif
         return m_NetServer.ClientAddrString(ClientId, IncludePort);
 }

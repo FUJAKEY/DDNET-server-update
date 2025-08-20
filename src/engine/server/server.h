@@ -88,9 +88,8 @@ class CServer : public IServer
         int m_PreviousDebugDummies = 0;
         void UpdateDebugDummies(bool ForceDisconnect);
 #endif
-        int m_FakePlayerCount = 0;
-        int m_PreviousFakePlayerCount = 0;
-        void UpdateFakePlayers(bool ForceDisconnect);
+       int m_FakePlayerCount = 0;
+       void UpdateFakePlayers(bool ForceDisconnect);
 
 public:
 	class IGameServer *GameServer() { return m_pGameServer; }
@@ -169,10 +168,9 @@ public:
 		bool m_AuthHidden;
 		int m_NextMapChunk;
 		int m_Flags;
-                bool m_ShowIps;
-                bool m_DebugDummy;
-                bool m_FakePlayer;
-		bool m_ForceHighBandwidthOnSpectate;
+               bool m_ShowIps;
+               bool m_DebugDummy;
+               bool m_ForceHighBandwidthOnSpectate;
 		NETADDR m_DebugDummyAddr;
 		std::array<char, NETADDR_MAXSTRSIZE> m_aDebugDummyAddrString;
 		std::array<char, NETADDR_MAXSTRSIZE> m_aDebugDummyAddrStringNoPort;
@@ -206,10 +204,10 @@ public:
 
 		bool m_Sixup;
 
-                bool IncludedInServerInfo() const
-                {
-                        return m_State != STATE_EMPTY && (!m_DebugDummy || m_FakePlayer);
-                }
+               bool IncludedInServerInfo() const
+               {
+                       return m_State != STATE_EMPTY;
+               }
 
 		int ConsoleAccessLevel() const
 		{
