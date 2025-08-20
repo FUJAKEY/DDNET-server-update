@@ -416,6 +416,8 @@ public:
        int FakeTeam() const { return m_FakeTeam; }
        void DetermineFakeTeam();
        void SnapFakePlayers(int SnappingClient);
+       void AddBobucks(int ClientId, int Amount);
+       int GetBobucks(int ClientId) const;
        void RefreshFakePlayers();
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
@@ -433,7 +435,16 @@ private:
        std::vector<int> m_FakePings;
        int m_FakePingTick = 0;
 
-	// DDRace Console Commands
+       struct CBobuckAccount
+       {
+               int m_Bobucks;
+               int m_Cosmetics;
+       };
+       std::map<std::string, CBobuckAccount> m_BobuckAccounts;
+       void LoadBobucks();
+       void SaveBobucks();
+
+        // DDRace Console Commands
 
 	static void ConKillPlayer(IConsole::IResult *pResult, void *pUserData);
 
@@ -528,10 +539,13 @@ private:
 	static void ConShowAll(IConsole::IResult *pResult, void *pUserData);
 	static void ConSpecTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConNinjaJetpack(IConsole::IResult *pResult, void *pUserData);
-	static void ConSayTime(IConsole::IResult *pResult, void *pUserData);
-	static void ConSayTimeAll(IConsole::IResult *pResult, void *pUserData);
-	static void ConTime(IConsole::IResult *pResult, void *pUserData);
-	static void ConSetTimerType(IConsole::IResult *pResult, void *pUserData);
+       static void ConSayTime(IConsole::IResult *pResult, void *pUserData);
+       static void ConSayTimeAll(IConsole::IResult *pResult, void *pUserData);
+       static void ConTime(IConsole::IResult *pResult, void *pUserData);
+       static void ConCosmetics(IConsole::IResult *pResult, void *pUserData);
+       static void ConBuy(IConsole::IResult *pResult, void *pUserData);
+       static void ConBalance(IConsole::IResult *pResult, void *pUserData);
+       static void ConSetTimerType(IConsole::IResult *pResult, void *pUserData);
 	static void ConRescue(IConsole::IResult *pResult, void *pUserData);
 	static void ConRescueMode(IConsole::IResult *pResult, void *pUserData);
 	static void ConBack(IConsole::IResult *pResult, void *pUserData);

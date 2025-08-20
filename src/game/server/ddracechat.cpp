@@ -44,6 +44,67 @@ void CGameContext::ConCredits(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp", pLine);
 }
 
+void CGameContext::ConCosmetics(IConsole::IResult *pResult, void *pUserData)
+{
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       int ClientId = pResult->m_ClientId;
+       if(!CheckClientId(ClientId))
+               return;
+       pSelf->SendChatTarget(ClientId, "1. Freeze particles - 3000 bobucks");
+       pSelf->SendChatTarget(ClientId, "Earn 1000 bobucks per finish and 2000 for beating your record.");
+       pSelf->SendChatTarget(ClientId, "Purchase with /buy <number>");
+}
+
+void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
+{
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       int ClientId = pResult->m_ClientId;
+       if(!CheckClientId(ClientId))
+               return;
+       CPlayer *pPl = pSelf->m_apPlayers[ClientId];
+       if(!pPl)
+               return;
+       int Num = pResult->GetInteger(0);
+       if(Num == 1)
+       {
+               const int Cost = 3000;
+               if(pPl->m_CosmeticsOwned & 1)
+               {
+                       pSelf->SendChatTarget(ClientId, "You already own this cosmetic.");
+                       return;
+               }
+               if(pPl->m_Bobucks < Cost)
+               {
+                       pSelf->SendChatTarget(ClientId, "Not enough bobucks.");
+                       return;
+               }
+               pPl->m_Bobucks -= Cost;
+               pPl->m_CosmeticsOwned |= 1;
+               CGameContext::CBobuckAccount &Acc = pSelf->m_BobuckAccounts[pSelf->Server()->ClientName(ClientId)];
+               Acc.m_Bobucks = pPl->m_Bobucks;
+               Acc.m_Cosmetics = pPl->m_CosmeticsOwned;
+               pSelf->SaveBobucks();
+               char aBuf[64];
+               str_format(aBuf, sizeof(aBuf), "Purchased Freeze particles. Balance: %d", pPl->m_Bobucks);
+               pSelf->SendChatTarget(ClientId, aBuf);
+       }
+       else
+       {
+               pSelf->SendChatTarget(ClientId, "Unknown cosmetic.");
+       }
+}
+
+void CGameContext::ConBalance(IConsole::IResult *pResult, void *pUserData)
+{
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       int ClientId = pResult->m_ClientId;
+       if(!CheckClientId(ClientId))
+               return;
+       char aBuf[64];
+       str_format(aBuf, sizeof(aBuf), "You have %d bobucks.", pSelf->GetBobucks(ClientId));
+       pSelf->SendChatTarget(ClientId, aBuf);
+}
+
 void CGameContext::ConInfo(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;

@@ -175,7 +175,8 @@ CGameContext::CGameContext(int Reset) :
 
 CGameContext::~CGameContext()
 {
-	Destruct(m_Resetting ? RESET : NO_RESET);
+       SaveBobucks();
+       Destruct(m_Resetting ? RESET : NO_RESET);
 }
 
 void CGameContext::Clear()
@@ -1555,7 +1556,19 @@ void CGameContext::OnClientEnter(int ClientId)
 	{
 		m_TeeHistorian.RecordPlayerReady(ClientId);
 	}
-	m_pController->OnPlayerConnect(m_apPlayers[ClientId]);
+       m_pController->OnPlayerConnect(m_apPlayers[ClientId]);
+
+       const char *pName = Server()->ClientName(ClientId);
+       auto It = m_BobuckAccounts.find(pName);
+       if(It != m_BobuckAccounts.end())
+       {
+               m_apPlayers[ClientId]->m_Bobucks = It->second.m_Bobucks;
+               m_apPlayers[ClientId]->m_CosmeticsOwned = It->second.m_Cosmetics;
+       }
+       else
+       {
+               m_BobuckAccounts[pName] = {0, 0};
+       }
 
 	{
 		CNetMsg_Sv_CommandInfoGroupStart Msg;
@@ -1781,9 +1794,18 @@ void CGameContext::OnClientDrop(int ClientId, const char *pReason)
 	LogEvent("Disconnect", ClientId);
 
 	AbortVoteKickOnDisconnect(ClientId);
-	m_pController->OnPlayerDisconnect(m_apPlayers[ClientId], pReason);
-	delete m_apPlayers[ClientId];
-	m_apPlayers[ClientId] = nullptr;
+       const char *pName = Server()->ClientName(ClientId);
+       CBobuckAccount &Acc = m_BobuckAccounts[pName];
+       if(m_apPlayers[ClientId])
+       {
+               Acc.m_Bobucks = m_apPlayers[ClientId]->m_Bobucks;
+               Acc.m_Cosmetics = m_apPlayers[ClientId]->m_CosmeticsOwned;
+       }
+       SaveBobucks();
+
+       m_pController->OnPlayerDisconnect(m_apPlayers[ClientId], pReason);
+       delete m_apPlayers[ClientId];
+       m_apPlayers[ClientId] = nullptr;
 
 	delete m_apSavedTeams[ClientId];
 	m_apSavedTeams[ClientId] = nullptr;
@@ -3748,9 +3770,10 @@ void CGameContext::OnConsoleInit()
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	m_pConfig = m_pConfigManager->Values();
-	m_pConsole = Kernel()->RequestInterface<IConsole>();
-	m_pEngine = Kernel()->RequestInterface<IEngine>();
-	m_pStorage = Kernel()->RequestInterface<IStorage>();
+       m_pConsole = Kernel()->RequestInterface<IConsole>();
+       m_pEngine = Kernel()->RequestInterface<IEngine>();
+       m_pStorage = Kernel()->RequestInterface<IStorage>();
+       LoadBobucks();
 
 	Console()->Register("tune", "s[tuning] ?f[value]", CFGFLAG_SERVER | CFGFLAG_GAME, ConTuneParam, this, "Tune variable to value or show current value");
 	Console()->Register("toggle_tune", "s[tuning] f[value 1] f[value 2]", CFGFLAG_SERVER, ConToggleTuneParam, this, "Toggle tune variable");
@@ -3935,9 +3958,12 @@ void CGameContext::RegisterChatCommands()
 	Console()->Register("specteam", "?i['0'|'1']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSpecTeam, this, "Whether to show players from other teams when spectating (on by default), optional i = 0 for off else for on");
 	Console()->Register("ninjajetpack", "?i['0'|'1']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConNinjaJetpack, this, "Whether to use ninja jetpack or not. Makes jetpack look more awesome");
 	Console()->Register("saytime", "?r[player name]", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConSayTime, this, "Privately messages someone's current time in this current running race (your time by default)");
-	Console()->Register("saytimeall", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConSayTimeAll, this, "Publicly messages everyone your current time in this current running race");
-	Console()->Register("time", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConTime, this, "Privately shows you your current time in this current running race in the broadcast message");
-	Console()->Register("timer", "?s['gametimer'|'broadcast'|'both'|'none'|'cycle']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSetTimerType, this, "Personal Setting of showing time in either broadcast or game/round timer, timer s, where s = broadcast for broadcast, gametimer for game/round timer, cycle for cycle, both for both, none for no timer and nothing to show current status");
+        Console()->Register("saytimeall", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConSayTimeAll, this, "Publicly messages everyone your current time in this current running race");
+       Console()->Register("time", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConTime, this, "Privately shows you your current time in this current running race in the broadcast message");
+       Console()->Register("cosmetics", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConCosmetics, this, "List available cosmetics");
+       Console()->Register("buy", "i[number]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConBuy, this, "Buy a cosmetic");
+       Console()->Register("balance", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConBalance, this, "Show your bobucks");
+       Console()->Register("timer", "?s['gametimer'|'broadcast'|'both'|'none'|'cycle']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSetTimerType, this, "Personal Setting of showing time in either broadcast or game/round timer, timer s, where s = broadcast for broadcast, gametimer for game/round timer, cycle for cycle, both for both, none for no timer and nothing to show current status");
 	Console()->Register("r", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CMDFLAG_PRACTICE, ConRescue, this, "Teleport yourself out of freeze if auto rescue mode is enabled, otherwise it will set position for rescuing if grounded and teleport you out of freeze if not (use sv_rescue 1 to enable this feature)");
 	Console()->Register("rescue", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CMDFLAG_PRACTICE, ConRescue, this, "Teleport yourself out of freeze if auto rescue mode is enabled, otherwise it will set position for rescuing if grounded and teleport you out of freeze if not (use sv_rescue 1 to enable this feature)");
 	Console()->Register("back", "", CFGFLAG_CHAT | CMDFLAG_PRACTICE, ConBack, this, "Teleport yourself to the last auto rescue position before you died (use sv_rescue 1 to enable this feature)");
@@ -4686,6 +4712,71 @@ void CGameContext::DetermineFakeTeam()
                 m_pController->Teams().SetTeamLock(m_FakeTeam, false);
         m_FakeTeam = Team;
         m_pController->Teams().SetTeamLock(m_FakeTeam, true);
+}
+
+void CGameContext::AddBobucks(int ClientId, int Amount)
+{
+       if(ClientId < 0 || ClientId >= MAX_CLIENTS)
+               return;
+       CPlayer *pPl = m_apPlayers[ClientId];
+       if(!pPl)
+               return;
+       pPl->m_Bobucks += Amount;
+       const char *pName = Server()->ClientName(ClientId);
+       CBobuckAccount &Acc = m_BobuckAccounts[pName];
+       Acc.m_Bobucks = pPl->m_Bobucks;
+       Acc.m_Cosmetics = pPl->m_CosmeticsOwned;
+       SaveBobucks();
+}
+
+int CGameContext::GetBobucks(int ClientId) const
+{
+       if(ClientId < 0 || ClientId >= MAX_CLIENTS || !m_apPlayers[ClientId])
+               return 0;
+       return m_apPlayers[ClientId]->m_Bobucks;
+}
+
+void CGameContext::LoadBobucks()
+{
+       char *pStr = Storage()->ReadFileStr("bobucks.txt", IStorage::TYPE_SAVE);
+       if(!pStr)
+               return;
+       char *pLine = pStr;
+       while(pLine && *pLine)
+       {
+               char *pNext = strchr(pLine, '\n');
+               if(pNext)
+                       *pNext = 0;
+               char aName[128];
+               int Amount = 0;
+               int Cosmetic = 0;
+               if(sscanf(pLine, "%127s %d %d", aName, &Amount, &Cosmetic) == 3)
+               {
+                       char aReal[64];
+                       str_base64_decode(aReal, sizeof(aReal), aName);
+                       m_BobuckAccounts[aReal] = {Amount, Cosmetic};
+               }
+               if(!pNext)
+                       break;
+               pLine = pNext + 1;
+       }
+       free(pStr);
+}
+
+void CGameContext::SaveBobucks()
+{
+       IOHANDLE File = Storage()->OpenFile("bobucks.txt", IOFLAG_WRITE, IStorage::TYPE_SAVE);
+       if(!File)
+               return;
+       for(const auto &It : m_BobuckAccounts)
+       {
+               char aName[128];
+               str_base64(aName, sizeof(aName), It.first.c_str(), str_length(It.first.c_str()));
+               char aBuf[256];
+               str_format(aBuf, sizeof(aBuf), "%s %d %d\n", aName, It.second.m_Bobucks, It.second.m_Cosmetics);
+               io_write(File, aBuf, str_length(aBuf));
+       }
+       io_close(File);
 }
 
 void CGameContext::OnPostGlobalSnap()

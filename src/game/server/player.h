@@ -199,11 +199,13 @@ public:
 		vec2 ConvertTargetToWorld(vec2 Position, vec2 Target) const;
 		void Write(const CNetMsg_Cl_CameraInfo *pMsg);
 		void Reset();
-	} m_CameraInfo;
+       } m_CameraInfo;
 
-	int m_ChatScore;
+       int m_ChatScore;
+       int m_Bobucks;
+       int m_CosmeticsOwned;
 
-	bool m_Moderating;
+       bool m_Moderating;
 
 	void UpdatePlaytime();
 	void AfkTimer();
