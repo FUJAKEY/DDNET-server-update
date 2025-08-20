@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 /*
 	Tick
@@ -161,8 +162,12 @@ class CGameContext : public IGameServer
 	static void ConVote(IConsole::IResult *pResult, void *pUserData);
 	static void ConVotes(IConsole::IResult *pResult, void *pUserData);
 	static void ConVoteNo(IConsole::IResult *pResult, void *pUserData);
-	static void ConDrySave(IConsole::IResult *pResult, void *pUserData);
-	static void ConAuthor(IConsole::IResult *pResult, void *pUserData);
+        static void ConDrySave(IConsole::IResult *pResult, void *pUserData);
+        static void ConAuthor(IConsole::IResult *pResult, void *pUserData);
+        static void ConPlayerSet(IConsole::IResult *pResult, void *pUserData);
+        static void ConPlayerSetReset(IConsole::IResult *pResult, void *pUserData);
+        static void ConPlayerSetPlus(IConsole::IResult *pResult, void *pUserData);
+        static void ConSvPlayerSetOnline(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConDumpAntibot(IConsole::IResult *pResult, void *pUserData);
 	static void ConAntibot(IConsole::IResult *pResult, void *pUserData);
@@ -403,17 +408,44 @@ public:
 	void OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int Id) override;
 	void ReadCensorList();
 
-	bool PracticeByDefault() const;
+        bool PracticeByDefault() const;
+
+       int FakePlayerCount() const { return m_FakePlayersOnline ? m_FakePlayerCount : 0; }
+       bool FakePlayersOnline() const { return m_FakePlayersOnline; }
+       const std::vector<std::string> &FakeNames() const { return m_FakeNames; }
+       int FakeTeam() const { return m_FakeTeam; }
+       void DetermineFakeTeam();
+       void SnapFakePlayers(int SnappingClient);
+       void AddBobucks(int ClientId, int Amount);
+       int GetBobucks(int ClientId) const;
+       void RefreshFakePlayers();
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
 
 private:
-	// starting 1 to make 0 the special value "no client id"
-	uint32_t m_NextUniqueClientId = 1;
-	bool m_VoteWillPass;
-	CScore *m_pScore;
+        // starting 1 to make 0 the special value "no client id"
+        uint32_t m_NextUniqueClientId = 1;
+        bool m_VoteWillPass;
+        CScore *m_pScore;
 
-	// DDRace Console Commands
+       int m_FakePlayerCount = 0;
+       bool m_FakePlayersOnline = false;
+       int m_FakeTeam = -1;
+       std::vector<std::string> m_FakeNames;
+       std::vector<int> m_FakePings;
+       int m_FakePingTick = 0;
+
+       struct CBobuckAccount
+       {
+               int m_Bobucks;
+               int m_Cosmetics;
+               int m_ActiveCosmetic;
+       };
+       std::map<std::string, CBobuckAccount> m_BobuckAccounts;
+       void LoadBobucks();
+       void SaveBobucks();
+
+        // DDRace Console Commands
 
 	static void ConKillPlayer(IConsole::IResult *pResult, void *pUserData);
 
@@ -423,8 +455,8 @@ private:
 	static void ConUnEndlessHook(IConsole::IResult *pResult, void *pUserData);
 	static void ConSolo(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnSolo(IConsole::IResult *pResult, void *pUserData);
-	static void ConFreeze(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnFreeze(IConsole::IResult *pResult, void *pUserData);
+       static void ConFreeze(IConsole::IResult *pResult, void *pUserData);
+       static void ConVisibleTitle(IConsole::IResult *pResult, void *pUserData);
 	static void ConDeep(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnDeep(IConsole::IResult *pResult, void *pUserData);
 	static void ConLiveFreeze(IConsole::IResult *pResult, void *pUserData);
@@ -508,10 +540,15 @@ private:
 	static void ConShowAll(IConsole::IResult *pResult, void *pUserData);
 	static void ConSpecTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConNinjaJetpack(IConsole::IResult *pResult, void *pUserData);
-	static void ConSayTime(IConsole::IResult *pResult, void *pUserData);
-	static void ConSayTimeAll(IConsole::IResult *pResult, void *pUserData);
-	static void ConTime(IConsole::IResult *pResult, void *pUserData);
-	static void ConSetTimerType(IConsole::IResult *pResult, void *pUserData);
+       static void ConSayTime(IConsole::IResult *pResult, void *pUserData);
+       static void ConSayTimeAll(IConsole::IResult *pResult, void *pUserData);
+       static void ConTime(IConsole::IResult *pResult, void *pUserData);
+       static void ConCosmetics(IConsole::IResult *pResult, void *pUserData);
+       static void ConBuy(IConsole::IResult *pResult, void *pUserData);
+       static void ConBalance(IConsole::IResult *pResult, void *pUserData);
+       static void ConInventory(IConsole::IResult *pResult, void *pUserData);
+       static void ConUse(IConsole::IResult *pResult, void *pUserData);
+       static void ConSetTimerType(IConsole::IResult *pResult, void *pUserData);
 	static void ConRescue(IConsole::IResult *pResult, void *pUserData);
 	static void ConRescueMode(IConsole::IResult *pResult, void *pUserData);
 	static void ConBack(IConsole::IResult *pResult, void *pUserData);
