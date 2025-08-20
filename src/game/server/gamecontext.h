@@ -410,12 +410,13 @@ public:
 
         bool PracticeByDefault() const;
 
-        int FakePlayerCount() const { return m_FakePlayersOnline ? m_FakePlayerCount : 0; }
-        bool FakePlayersOnline() const { return m_FakePlayersOnline; }
-        const std::vector<std::string> &FakeNames() const { return m_FakeNames; }
-        int FakeTeam() const { return m_FakeTeam; }
+       int FakePlayerCount() const { return m_FakePlayersOnline ? m_FakePlayerCount : 0; }
+       bool FakePlayersOnline() const { return m_FakePlayersOnline; }
+       const std::vector<std::string> &FakeNames() const { return m_FakeNames; }
+       int FakeTeam() const { return m_FakeTeam; }
        void DetermineFakeTeam();
        void SnapFakePlayers(int SnappingClient);
+       void RefreshFakePlayers();
 
 	std::shared_ptr<CScoreRandomMapResult> m_SqlRandomMapResult;
 
@@ -425,10 +426,11 @@ private:
         bool m_VoteWillPass;
         CScore *m_pScore;
 
-        int m_FakePlayerCount = 0;
-        bool m_FakePlayersOnline = false;
-        int m_FakeTeam = -1;
-        std::vector<std::string> m_FakeNames;
+       int m_FakePlayerCount = 0;
+       bool m_FakePlayersOnline = false;
+       int m_FakeTeam = -1;
+       std::vector<std::string> m_FakeNames;
+       std::vector<int> m_FakePings;
 
 	// DDRace Console Commands
 

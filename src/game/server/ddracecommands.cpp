@@ -694,6 +694,7 @@ void CGameContext::ConPlayerSet(IConsole::IResult *pResult, void *pUserData)
         pSelf->m_FakePlayerCount = maximum(0, Count);
         pSelf->m_FakePlayersOnline = true;
         pSelf->DetermineFakeTeam();
+       pSelf->RefreshFakePlayers();
         pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
         pSelf->Server()->ExpireServerInfo();
 }
@@ -709,11 +710,12 @@ void CGameContext::ConPlayerSetReset(IConsole::IResult *pResult, void *pUserData
         pSelf->m_FakePlayerCount = 0;
         pSelf->m_FakePlayersOnline = false;
         pSelf->Server()->SetFakePlayerCount(0);
-        if(pSelf->m_FakeTeam != -1)
-        {
-                pSelf->m_pController->Teams().SetTeamLock(pSelf->m_FakeTeam, false);
-                pSelf->m_FakeTeam = -1;
-        }
+       pSelf->RefreshFakePlayers();
+       if(pSelf->m_FakeTeam != -1)
+       {
+               pSelf->m_pController->Teams().SetTeamLock(pSelf->m_FakeTeam, false);
+               pSelf->m_FakeTeam = -1;
+       }
         pSelf->Server()->ExpireServerInfo();
 }
 
@@ -726,11 +728,12 @@ void CGameContext::ConPlayerSetPlus(IConsole::IResult *pResult, void *pUserData)
                 return;
         }
         int Add = pResult->GetInteger(0);
-        pSelf->m_FakePlayerCount = maximum(0, pSelf->m_FakePlayerCount + Add);
-        pSelf->m_FakePlayersOnline = true;
-        pSelf->DetermineFakeTeam();
-        pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
-        pSelf->Server()->ExpireServerInfo();
+       pSelf->m_FakePlayerCount = maximum(0, pSelf->m_FakePlayerCount + Add);
+       pSelf->m_FakePlayersOnline = true;
+       pSelf->DetermineFakeTeam();
+       pSelf->RefreshFakePlayers();
+       pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
+       pSelf->Server()->ExpireServerInfo();
 }
 
 void CGameContext::ConSvPlayerSetOnline(IConsole::IResult *pResult, void *pUserData)
@@ -742,21 +745,23 @@ void CGameContext::ConSvPlayerSetOnline(IConsole::IResult *pResult, void *pUserD
                 return;
         }
         pSelf->m_FakePlayersOnline = pResult->GetInteger(0) != 0;
-        if(pSelf->m_FakePlayersOnline)
-        {
-                pSelf->DetermineFakeTeam();
-                pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
-        }
-        else
-        {
-                pSelf->Server()->SetFakePlayerCount(0);
-                if(pSelf->m_FakeTeam != -1)
-                {
-                        pSelf->m_pController->Teams().SetTeamLock(pSelf->m_FakeTeam, false);
-                        pSelf->m_FakeTeam = -1;
-                }
-        }
-        pSelf->Server()->ExpireServerInfo();
+       if(pSelf->m_FakePlayersOnline)
+       {
+               pSelf->DetermineFakeTeam();
+               pSelf->RefreshFakePlayers();
+               pSelf->Server()->SetFakePlayerCount(pSelf->m_FakePlayerCount);
+       }
+       else
+       {
+               pSelf->Server()->SetFakePlayerCount(0);
+               pSelf->RefreshFakePlayers();
+               if(pSelf->m_FakeTeam != -1)
+               {
+                       pSelf->m_pController->Teams().SetTeamLock(pSelf->m_FakeTeam, false);
+                       pSelf->m_FakeTeam = -1;
+               }
+       }
+       pSelf->Server()->ExpireServerInfo();
 }
 
 void CGameContext::LogEvent(const char *Description, int ClientId)

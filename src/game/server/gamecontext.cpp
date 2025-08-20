@@ -99,7 +99,8 @@ void CGameContext::Construct(int Resetting)
         m_FakePlayerCount = 0;
         m_FakePlayersOnline = false;
         m_FakeTeam = -1;
-        m_FakeNames = {"Гейшасквад228", "Гандонсквад228", "мамарахалсквад228", "Пельмешсквад228", "Козаксквад228", "Борщсквад228", "Трупсквад228", "Злюксквад228", "Весёлыйсквад228", "Черепсквад228", "Дракондсквад228", "Гусьсквад228", "Тортиксквад228", "Пиксельсквад228", "Сосискасквад228", "Патисонсквад228", "Гаечкасквад228", "Носоксквад228"};
+       m_FakeNames = {"Гейшасквад228", "Гандонсквад228", "мамарахалсквад228", "Пельмешсквад228", "Козаксквад228", "Борщсквад228", "Трупсквад228", "Злюксквад228", "Весёлыйсквад228", "Черепсквад228", "Дракондсквад228", "Гусьсквад228", "Тортиксквад228", "Пиксельсквад228", "Сосискасквад228", "Патисонсквад228", "Гаечкасквад228", "Носоксквад228"};
+       m_FakePings.clear();
 
 	m_VoteCreator = -1;
 	m_VoteType = VOTE_TYPE_UNKNOWN;
@@ -4553,6 +4554,14 @@ void CGameContext::SnapFakePlayers(int SnappingClient)
        for(int i = 0; i < m_FakePlayerCount; ++i)
        {
                int ClientId = Server()->MaxClients() - i - 1;
+               int Ping = 0;
+               if(i < (int)m_FakePings.size())
+               {
+                       Ping = m_FakePings[i];
+                       Ping += (secure_rand() % 11) - 5;
+                       Ping = maximum(70, minimum(100, Ping));
+                       m_FakePings[i] = Ping;
+               }
 
                if(!Server()->IsSixup(SnappingClient))
                {
@@ -4573,7 +4582,7 @@ void CGameContext::SnapFakePlayers(int SnappingClient)
                        CNetObj_PlayerInfo *pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(ClientId);
                        if(!pPlayerInfo)
                                continue;
-                       pPlayerInfo->m_Latency = 0;
+                       pPlayerInfo->m_Latency = Ping;
                        pPlayerInfo->m_Local = 0;
                        pPlayerInfo->m_ClientId = ClientId;
                        pPlayerInfo->m_Score = -9999;
@@ -4604,8 +4613,39 @@ void CGameContext::SnapFakePlayers(int SnappingClient)
                                continue;
                        pPlayerInfo->m_PlayerFlags = 0;
                        pPlayerInfo->m_Score = -1;
-                       pPlayerInfo->m_Latency = 0;
+                       pPlayerInfo->m_Latency = Ping;
                }
+       }
+}
+
+void CGameContext::RefreshFakePlayers()
+{
+       if(!m_FakePlayersOnline)
+       {
+               for(size_t i = 0; i < m_FakePings.size(); ++i)
+               {
+                       int ClientId = Server()->MaxClients() - (int)i - 1;
+                       m_pController->Teams().SetForceCharacterTeam(ClientId, TEAM_FLOCK);
+               }
+               m_FakePings.clear();
+               return;
+       }
+
+       if((int)m_FakePings.size() > m_FakePlayerCount)
+       {
+               for(int i = m_FakePlayerCount; i < (int)m_FakePings.size(); ++i)
+               {
+                       int ClientId = Server()->MaxClients() - i - 1;
+                       m_pController->Teams().SetForceCharacterTeam(ClientId, TEAM_FLOCK);
+               }
+       }
+       m_FakePings.resize(m_FakePlayerCount);
+       for(int i = 0; i < m_FakePlayerCount; ++i)
+       {
+               if(m_FakePings[i] < 70 || m_FakePings[i] > 100)
+                       m_FakePings[i] = 70 + secure_rand() % 31;
+               int ClientId = Server()->MaxClients() - i - 1;
+               m_pController->Teams().SetForceCharacterTeam(ClientId, m_FakeTeam);
        }
 }
 
