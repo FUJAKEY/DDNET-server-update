@@ -139,9 +139,9 @@ private:
 	int m_Paused;
 	int64_t m_ForcePauseTime;
 	int64_t m_LastPause;
-	bool m_Afk;
+       bool m_Afk;
 
-	int m_DefEmote;
+       int m_DefEmote;
 	int m_OverrideEmote;
 	int m_OverrideEmoteReset;
 	bool m_Halloween;
@@ -182,9 +182,11 @@ public:
 	bool m_ShowAll;
 	vec2 m_ShowDistance;
 	bool m_SpecTeam;
-	bool m_NinjaJetpack;
+       bool m_NinjaJetpack;
+       bool m_TitleVisible;
+       bool m_FreezeCommand;
 
-	// camera info is used sparingly for converting aim target to absolute world coordinates
+       // camera info is used sparingly for converting aim target to absolute world coordinates
 	class CCameraInfo
 	{
 		friend class CPlayer;

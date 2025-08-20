@@ -74,15 +74,18 @@ void CPlayer::Reset()
 	m_DefEmote = EMOTE_NORMAL;
 	m_Afk = true;
 	m_LastWhisperTo = -1;
-	m_LastSetSpectatorMode = 0;
-	m_aTimeoutCode[0] = '\0';
-	delete m_pLastTarget;
-	m_pLastTarget = new CNetObj_PlayerInput({0});
-	m_LastTargetInit = false;
-	m_TuneZone = 0;
-	m_TuneZoneOld = m_TuneZone;
-	m_Halloween = false;
-	m_FirstPacket = true;
+       m_LastSetSpectatorMode = 0;
+       m_aTimeoutCode[0] = '\0';
+       delete m_pLastTarget;
+       m_pLastTarget = new CNetObj_PlayerInput({0});
+       m_LastTargetInit = false;
+       m_TuneZone = 0;
+       m_TuneZoneOld = m_TuneZone;
+       m_Halloween = false;
+       m_FirstPacket = true;
+
+       m_TitleVisible = false;
+       m_FreezeCommand = false;
 
 	m_SendVoteIndex = -1;
 
@@ -320,7 +323,18 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	StrToInts(pClientInfo->m_aName, std::size(pClientInfo->m_aName), Server()->ClientName(m_ClientId));
-	StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), Server()->ClientClan(m_ClientId));
+       const char *pClan = Server()->ClientClan(m_ClientId);
+       if(m_TitleVisible)
+       {
+               int Auth = Server()->GetAuthedState(m_ClientId);
+               if(Auth == AUTHED_ADMIN)
+                       pClan = "^xFF0000Admin";
+               else if(Auth == AUTHED_MOD)
+                       pClan = "^x0000FFMod";
+               else if(Auth == AUTHED_HELPER)
+                       pClan = "^x00FF00Helper";
+       }
+       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), pClan);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientId);
 	StrToInts(pClientInfo->m_aSkin, std::size(pClientInfo->m_aSkin), m_TeeInfos.m_aSkinName);
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
@@ -654,10 +668,17 @@ void CPlayer::Respawn(bool WeakHook)
 CCharacter *CPlayer::ForceSpawn(vec2 Pos)
 {
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
-	m_pCharacter->Spawn(this, Pos);
-	m_Team = 0;
-	return m_pCharacter;
+       m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
+       m_pCharacter->Spawn(this, Pos);
+       m_Team = 0;
+
+       if(m_FreezeCommand)
+       {
+               int Seconds = 0x3fffffff / Server()->TickSpeed();
+               m_pCharacter->Freeze(Seconds);
+       }
+
+       return m_pCharacter;
 }
 
 void CPlayer::SetTeam(int Team, bool DoChatMsg)
@@ -744,10 +765,16 @@ void CPlayer::TryRespawn()
 
 	m_WeakHookSpawn = false;
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
-	m_ViewPos = SpawnPos;
-	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(SpawnPos, GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId));
+       m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
+       m_ViewPos = SpawnPos;
+       m_pCharacter->Spawn(this, SpawnPos);
+       GameServer()->CreatePlayerSpawn(SpawnPos, GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId));
+
+       if(m_FreezeCommand)
+       {
+               int Seconds = 0x3fffffff / Server()->TickSpeed();
+               m_pCharacter->Freeze(Seconds);
+       }
 
 	if(g_Config.m_SvTeam == SV_TEAM_FORCED_SOLO)
 		m_pCharacter->SetSolo(true);

@@ -23,13 +23,8 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	// Allow execution from rcon/econ, but restrict in-game usage to admins
-	int CallerCid = pResult->m_ClientId;
-	if(CallerCid >= 0 && pSelf->Server()->GetAuthedState(CallerCid) != AUTHED_ADMIN)
-	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "Only admins can use this command.");
-		return;
-	}
+       // Caller id, -1 for console commands
+       int CallerCid = pResult->m_ClientId;
 
 	int TargetCid = pResult->GetInteger(0);
 	if(TargetCid < 0 || TargetCid >= MAX_CLIENTS || !pSelf->m_apPlayers[TargetCid] || !pSelf->Server()->ClientIngame(TargetCid))
@@ -48,14 +43,15 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		str_append(aCmd, pResult->GetString(i), sizeof(aCmd));
 	}
 
-	// Execute with full admin privileges
-	int OldLevel = IConsole::ACCESS_LEVEL_ADMIN;
-	if(CallerCid >= 0)
-	{
-		int AuthLevel = pSelf->Server()->GetAuthedState(CallerCid);
-		OldLevel = AuthLevel == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN :
-		AuthLevel == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER;
-	}
+       // Execute with full admin privileges
+       int OldLevel = IConsole::ACCESS_LEVEL_ADMIN;
+       if(CallerCid >= 0)
+       {
+               int AuthLevel = pSelf->Server()->GetAuthedState(CallerCid);
+               OldLevel = AuthLevel == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN :
+                       AuthLevel == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
+                       AuthLevel == AUTHED_HELPER ? IConsole::ACCESS_LEVEL_HELPER : IConsole::ACCESS_LEVEL_USER;
+       }
 	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 	pSelf->Console()->ExecuteLine(aCmd, TargetCid, false);
 	pSelf->Console()->SetAccessLevel(OldLevel);
@@ -247,22 +243,35 @@ void CGameContext::ConUnSolo(IConsole::IResult *pResult, void *pUserData)
 
 void CGameContext::ConFreeze(IConsole::IResult *pResult, void *pUserData)
 {
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	if(!CheckClientId(pResult->m_ClientId))
-		return;
-	CCharacter *pChr = pSelf->GetPlayerChar(pResult->m_ClientId);
-	if(pChr)
-		pChr->Freeze();
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       int ClientId = pResult->GetVictim();
+       CPlayer *pPlayer = pSelf->m_apPlayers[ClientId];
+       if(!pPlayer)
+               return;
+
+       bool Enable = pResult->GetInteger(1) != 0;
+       pPlayer->m_FreezeCommand = Enable;
+
+       if(CCharacter *pChr = pPlayer->GetCharacter())
+       {
+               if(Enable)
+               {
+                       int Seconds = 0x3fffffff / pSelf->Server()->TickSpeed();
+                       pChr->Freeze(Seconds);
+               }
+               else
+                       pChr->UnFreeze();
+       }
 }
 
-void CGameContext::ConUnFreeze(IConsole::IResult *pResult, void *pUserData)
+void CGameContext::ConVisibleTitle(IConsole::IResult *pResult, void *pUserData)
 {
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	if(!CheckClientId(pResult->m_ClientId))
-		return;
-	CCharacter *pChr = pSelf->GetPlayerChar(pResult->m_ClientId);
-	if(pChr)
-		pChr->UnFreeze();
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       if(!CheckClientId(pResult->m_ClientId))
+               return;
+
+       if(CPlayer *pPlayer = pSelf->m_apPlayers[pResult->m_ClientId])
+               pPlayer->m_TitleVisible = pResult->GetInteger(0) != 0;
 }
 
 void CGameContext::ConDeep(IConsole::IResult *pResult, void *pUserData)
