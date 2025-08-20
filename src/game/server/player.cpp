@@ -323,18 +323,21 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	StrToInts(pClientInfo->m_aName, std::size(pClientInfo->m_aName), Server()->ClientName(m_ClientId));
-       const char *pClan = Server()->ClientClan(m_ClientId);
+       const char *pClanSrc = Server()->ClientClan(m_ClientId);
        if(m_TitleVisible)
        {
                int Auth = Server()->GetAuthedState(m_ClientId);
                if(Auth == AUTHED_ADMIN)
-                       pClan = "^xFF0000Admin";
+                       pClanSrc = "^xFF0000Admin";
                else if(Auth == AUTHED_MOD)
-                       pClan = "^x0000FFMod";
+                       pClanSrc = "^x0000FFMod";
                else if(Auth == AUTHED_HELPER)
-                       pClan = "^x00FF00Helper";
+                       pClanSrc = "^x00FF00Helper";
        }
-       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), pClan);
+       const int ClanBytes = sizeof(pClientInfo->m_aClan);
+       char aClan[sizeof(pClientInfo->m_aClan)];
+       str_utf8_truncate(aClan, ClanBytes, pClanSrc, ClanBytes - 1);
+       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), aClan);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientId);
 	StrToInts(pClientInfo->m_aSkin, std::size(pClientInfo->m_aSkin), m_TeeInfos.m_aSkinName);
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
