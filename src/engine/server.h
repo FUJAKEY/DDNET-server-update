@@ -281,8 +281,9 @@ public:
 	virtual bool SetTimedOut(int ClientId, int OrigId) = 0;
 	virtual void SetTimeoutProtected(int ClientId) = 0;
 
-	virtual void SetErrorShutdown(const char *pReason) = 0;
-	virtual void ExpireServerInfo() = 0;
+        virtual void SetErrorShutdown(const char *pReason) = 0;
+        virtual void ExpireServerInfo() = 0;
+        virtual void SetFakePlayerCount(int Count) = 0;
 
 	virtual void FillAntibot(CAntibotRoundData *pData) = 0;
 
