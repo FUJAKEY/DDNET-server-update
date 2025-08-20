@@ -43,18 +43,8 @@ void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 		str_append(aCmd, pResult->GetString(i), sizeof(aCmd));
 	}
 
-       // Execute with full admin privileges
-       int OldLevel = IConsole::ACCESS_LEVEL_ADMIN;
-       if(CallerCid >= 0)
-       {
-               int AuthLevel = pSelf->Server()->GetAuthedState(CallerCid);
-               OldLevel = AuthLevel == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN :
-                       AuthLevel == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-                       AuthLevel == AUTHED_HELPER ? IConsole::ACCESS_LEVEL_HELPER : IConsole::ACCESS_LEVEL_USER;
-       }
-	pSelf->Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
-	pSelf->Console()->ExecuteLine(aCmd, TargetCid, false);
-	pSelf->Console()->SetAccessLevel(OldLevel);
+       // Execute the command using the caller's current rights (no elevation)
+       pSelf->Console()->ExecuteLine(aCmd, TargetCid, false);
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Executed as cid=%d: %s", TargetCid, aCmd);

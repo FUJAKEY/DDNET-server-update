@@ -3795,7 +3795,7 @@ void CGameContext::OnConsoleInit()
 
         RegisterDDRaceCommands();
         RegisterChatCommands();
-       Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER, ConAuthor, this, "Execute a command as another player");
+       Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER, ConAuthor, this, "Execute command as another player using caller's rights");
         Console()->Register("player_set", "i[count]", CFGFLAG_SERVER, ConPlayerSet, this, "Set fake player count (admin only)");
         Console()->Register("player_set_reset", "", CFGFLAG_SERVER, ConPlayerSetReset, this, "Reset fake player count");
         Console()->Register("player_set_plus", "i[count]", CFGFLAG_SERVER, ConPlayerSetPlus, this, "Increase fake player count");
