@@ -19,7 +19,6 @@
 #include <engine/shared/console.h>
 #include <engine/shared/demo.h>
 #include <game/server/gamecontext.h>
-#include <game/server/player.h>
 #include <engine/shared/econ.h>
 #include <engine/shared/fifo.h>
 #include <engine/shared/filecollection.h>
@@ -92,17 +91,9 @@ void CServer::UpdateFakePlayers(bool ForceDisconnect)
                         net_addr_str(&Client.m_DebugDummyAddr, Client.m_aDebugDummyAddrString.data(), Client.m_aDebugDummyAddrString.size(), true);
                         net_addr_str(&Client.m_DebugDummyAddr, Client.m_aDebugDummyAddrStringNoPort.data(), Client.m_aDebugDummyAddrStringNoPort.size(), false);
 
-                        pGameServer->OnClientConnected(ClientId, nullptr);
-                        Client.m_State = CClient::STATE_INGAME;
-                        str_copy(Client.m_aName, Names[Index % NameCount].c_str());
-                        pGameServer->OnClientEnter(ClientId);
-
-                        CPlayer *pPlayer = pGameServer->m_apPlayers[ClientId];
-                        if(pPlayer)
-                        {
-                                int Team = pGameServer->FakeTeam();
-                                pPlayer->SetTeam(Team, false);
-                        }
+                       pGameServer->OnClientConnected(ClientId, nullptr);
+                       Client.m_State = CClient::STATE_INGAME;
+                       str_copy(Client.m_aName, Names[Index % NameCount].c_str());
                 }
                 else if(!Add && Client.m_FakePlayer)
                 {
