@@ -862,45 +862,45 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
 
 bool CScoreWorker::LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
 {
-       if(!pSqlServer)
-       {
-               str_copy(pError, "no database connection", ErrorSize);
-               dbg_msg("sql", "%s", pError);
-               return true;
-       }
+if(!pSqlServer)
+{
+str_copy(pError, "no database connection", ErrorSize);
+dbg_msg("sql", "%s", pError);
+return false;
+}
        const auto *pData = dynamic_cast<const CSqlBobucksRequest *>(pGameData);
        auto *pResult = pGameData ? dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get()) : nullptr;
-       if(!pData || !pResult)
-       {
-               str_copy(pError, "invalid data for LoadBobucks", ErrorSize);
-               dbg_msg("sql", "%s", pError);
-               return true;
-       }
+if(!pData || !pResult)
+{
+str_copy(pError, "invalid data for LoadBobucks", ErrorSize);
+dbg_msg("sql", "%s", pError);
+return false;
+}
        pResult->SetVariant(CScorePlayerResult::BOBUCKS);
        char aBuf[256];
        int NumUpdated;
        str_format(aBuf, sizeof(aBuf),
                "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
                pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
-       if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
-               return true;
-       if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
-               return true;
+if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+return false;
+if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
+return false;
 
        str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetic FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
-       if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
-               return true;
+if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
+return false;
        pSqlServer->BindString(1, pData->m_aName);
        bool End;
-       if(!pSqlServer->Step(&End, pError, ErrorSize))
-               return true;
-       if(!End)
-       {
-               pResult->m_Data.m_BobucksInfo.m_Bobucks = pSqlServer->GetInt(1);
-               pResult->m_Data.m_BobucksInfo.m_Cosmetics = pSqlServer->GetInt(2);
-               pResult->m_Data.m_BobucksInfo.m_ActiveCosmetic = pSqlServer->GetInt(3);
-       }
-       return false;
+if(!pSqlServer->Step(&End, pError, ErrorSize))
+return false;
+if(!End)
+{
+pResult->m_Data.m_BobucksInfo.m_Bobucks = pSqlServer->GetInt(1);
+pResult->m_Data.m_BobucksInfo.m_Cosmetics = pSqlServer->GetInt(2);
+pResult->m_Data.m_BobucksInfo.m_ActiveCosmetic = pSqlServer->GetInt(3);
+}
+return true;
 }
 
 bool CScoreWorker::ShowRank(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
