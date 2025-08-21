@@ -416,7 +416,7 @@ public:
        int FakeTeam() const { return m_FakeTeam; }
        void DetermineFakeTeam();
        void SnapFakePlayers(int SnappingClient);
-       void AddBobucks(int ClientId, int Amount);
+       bool AddBobucks(int ClientId, int Amount);
        int GetBobucks(int ClientId) const;
        void RefreshFakePlayers();
 

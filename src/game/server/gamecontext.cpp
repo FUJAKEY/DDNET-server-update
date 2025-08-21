@@ -4719,19 +4719,23 @@ void CGameContext::DetermineFakeTeam()
         m_pController->Teams().SetTeamLock(m_FakeTeam, true);
 }
 
-void CGameContext::AddBobucks(int ClientId, int Amount)
+bool CGameContext::AddBobucks(int ClientId, int Amount)
 {
-if(ClientId < 0 || ClientId >= MAX_CLIENTS)
-return;
-CPlayer *pPl = m_apPlayers[ClientId];
-if(!pPl || !Server()->ClientIngame(ClientId))
-return;
+       if(ClientId < 0 || ClientId >= MAX_CLIENTS)
+               return false;
+       CPlayer *pPl = m_apPlayers[ClientId];
+       if(!pPl || !Server()->ClientIngame(ClientId))
+               return false;
 
-int64_t NewBalance = (int64_t)pPl->m_Bobucks + Amount;
-pPl->m_Bobucks = (int)std::clamp<int64_t>(NewBalance, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
-const char *pName = Server()->ClientName(ClientId);
-if(Score() && pName && pName[0])
-Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+       int64_t NewBalance = (int64_t)pPl->m_Bobucks + Amount;
+       pPl->m_Bobucks = (int)std::clamp<int64_t>(NewBalance, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+       const char *pName = Server()->ClientName(ClientId);
+       if(Score() && pName && pName[0])
+       {
+               Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               return true;
+       }
+       return false;
 }
 
 int CGameContext::GetBobucks(int ClientId) const

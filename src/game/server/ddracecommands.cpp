@@ -293,15 +293,21 @@ void CGameContext::ConAddMoney(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 	
-	int Amount = Victim >= 0 ? pResult->GetInteger(1) : pResult->GetInteger(0);
-	pSelf->AddBobucks(TargetCid, Amount);
-	
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Bobucks: %d", pSelf->GetBobucks(TargetCid));
-	if(pResult->m_ClientId >= 0)
-		pSelf->SendChatTarget(TargetCid, aBuf);
-	else
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "addmoney", aBuf);
+       int Amount = Victim >= 0 ? pResult->GetInteger(1) : pResult->GetInteger(0);
+       bool Saved = pSelf->AddBobucks(TargetCid, Amount);
+
+       char aBuf[128];
+       str_format(aBuf, sizeof(aBuf), "Bobucks: %d", pSelf->GetBobucks(TargetCid));
+       if(pResult->m_ClientId >= 0)
+               pSelf->SendChatTarget(TargetCid, aBuf);
+       else
+       {
+               pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "addmoney", aBuf);
+               if(Saved)
+                       pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "addmoney", "balance saved");
+               else
+                       pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "addmoney", "save failed");
+       }
 }
 
 void CGameContext::ConDeep(IConsole::IResult *pResult, void *pUserData)
