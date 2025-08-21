@@ -168,11 +168,16 @@ static int PlayerFlags_SixToSeven(int Flags)
 
 void CPlayer::Tick()
 {
-	if(m_ScoreQueryResult != nullptr && m_ScoreQueryResult->m_Completed && m_SentSnaps >= 3)
-	{
-		ProcessScoreResult(*m_ScoreQueryResult);
-		m_ScoreQueryResult = nullptr;
-	}
+       if(m_ScoreQueryResult != nullptr && m_ScoreQueryResult->m_Completed && m_SentSnaps >= 3)
+       {
+               auto pResult = m_ScoreQueryResult;
+               ProcessScoreResult(*pResult);
+               m_ScoreQueryResult = nullptr;
+               if(pResult->m_MessageKind == CScorePlayerResult::PLAYER_INFO && GameServer()->Score())
+               {
+                       GameServer()->Score()->LoadBobucks(m_ClientId, Server()->ClientName(m_ClientId));
+               }
+       }
 	if(m_ScoreFinishResult != nullptr && m_ScoreFinishResult->m_Completed)
 	{
 		ProcessScoreResult(*m_ScoreFinishResult);

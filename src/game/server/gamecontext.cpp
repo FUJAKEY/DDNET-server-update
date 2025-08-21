@@ -1558,7 +1558,6 @@ void CGameContext::OnClientEnter(int ClientId)
                m_TeeHistorian.RecordPlayerReady(ClientId);
        }
        m_pController->OnPlayerConnect(m_apPlayers[ClientId]);
-       Score()->LoadBobucks(ClientId, Server()->ClientName(ClientId));
 
         {
                 CNetMsg_Sv_CommandInfoGroupStart Msg;
