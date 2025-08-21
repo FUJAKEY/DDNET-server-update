@@ -387,6 +387,8 @@ void CScore::GetSaves(int ClientId)
 
 void CScore::SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int Active)
 {
+       if(!m_pPool)
+               return;
        auto Tmp = std::make_unique<CSqlBobucksSave>();
        str_copy(Tmp->m_aName, pName, sizeof(Tmp->m_aName));
        Tmp->m_Bobucks = Bobucks;
@@ -399,6 +401,8 @@ void CScore::LoadBobucks(int ClientId, const char *pName)
 {
        auto pResult = NewSqlPlayerResult(ClientId);
        if(pResult == nullptr)
+               return;
+       if(!m_pPool)
                return;
        auto Tmp = std::make_unique<CSqlBobucksRequest>(pResult);
        str_copy(Tmp->m_aName, pName, sizeof(Tmp->m_aName));

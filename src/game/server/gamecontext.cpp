@@ -4713,7 +4713,8 @@ void CGameContext::AddBobucks(int ClientId, int Amount)
                return;
        pPl->m_Bobucks += Amount;
        const char *pName = Server()->ClientName(ClientId);
-       Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+       if(Score())
+               Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
 }
 
 int CGameContext::GetBobucks(int ClientId) const
