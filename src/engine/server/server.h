@@ -82,12 +82,14 @@ class CServer : public IServer
 	UNIXSOCKET m_ConnLoggingSocket;
 #endif
 
-	class CDbConnectionPool *m_pConnectionPool;
+        class CDbConnectionPool *m_pConnectionPool;
 
 #ifdef CONF_DEBUG
-	int m_PreviousDebugDummies = 0;
-	void UpdateDebugDummies(bool ForceDisconnect);
+        int m_PreviousDebugDummies = 0;
+        void UpdateDebugDummies(bool ForceDisconnect);
 #endif
+       int m_FakePlayerCount = 0;
+       void UpdateFakePlayers(bool ForceDisconnect);
 
 public:
 	class IGameServer *GameServer() { return m_pGameServer; }
@@ -166,9 +168,9 @@ public:
 		bool m_AuthHidden;
 		int m_NextMapChunk;
 		int m_Flags;
-		bool m_ShowIps;
-		bool m_DebugDummy;
-		bool m_ForceHighBandwidthOnSpectate;
+               bool m_ShowIps;
+               bool m_DebugDummy;
+               bool m_ForceHighBandwidthOnSpectate;
 		NETADDR m_DebugDummyAddr;
 		std::array<char, NETADDR_MAXSTRSIZE> m_aDebugDummyAddrString;
 		std::array<char, NETADDR_MAXSTRSIZE> m_aDebugDummyAddrStringNoPort;
@@ -202,10 +204,10 @@ public:
 
 		bool m_Sixup;
 
-		bool IncludedInServerInfo() const
-		{
-			return m_State != STATE_EMPTY && !m_DebugDummy;
-		}
+               bool IncludedInServerInfo() const
+               {
+                       return m_State != STATE_EMPTY;
+               }
 
 		int ConsoleAccessLevel() const
 		{
@@ -404,11 +406,12 @@ public:
 	CCache m_aSixupServerInfoCache[2];
 	bool m_ServerInfoNeedsUpdate;
 
-	void FillAntibot(CAntibotRoundData *pData) override;
+        void FillAntibot(CAntibotRoundData *pData) override;
 
-	void ExpireServerInfo() override;
-	void CacheServerInfo(CCache *pCache, int Type, bool SendClients);
-	void CacheServerInfoSixup(CCache *pCache, bool SendClients, int MaxConsideredClients);
+        void ExpireServerInfo() override;
+        void SetFakePlayerCount(int Count) override;
+        void CacheServerInfo(CCache *pCache, int Type, bool SendClients);
+        void CacheServerInfoSixup(CCache *pCache, bool SendClients, int MaxConsideredClients);
 	void SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool SendClients);
 	void GetServerInfoSixup(CPacker *pPacker, bool SendClients);
 	bool RateLimitServerInfoConnless();
