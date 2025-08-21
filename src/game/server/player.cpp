@@ -20,14 +20,17 @@ MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 IServer *CPlayer::Server() const { return m_pGameServer->Server(); }
 
 CPlayer::CPlayer(CGameContext *pGameServer, uint32_t UniqueClientId, int ClientId, int Team) :
-	m_UniqueClientId(UniqueClientId)
+        m_UniqueClientId(UniqueClientId)
 {
-	m_pGameServer = pGameServer;
-	m_ClientId = ClientId;
-	m_Team = GameServer()->m_pController->ClampTeam(Team);
-	m_NumInputs = 0;
-	Reset();
-	GameServer()->Antibot()->OnPlayerInit(m_ClientId);
+        m_pGameServer = pGameServer;
+        m_ClientId = ClientId;
+        m_Team = GameServer()->m_pController->ClampTeam(Team);
+        m_NumInputs = 0;
+       Reset();
+       m_Bobucks = 0;
+       m_CosmeticsOwned = 0;
+       m_ActiveCosmetic = 0;
+        GameServer()->Antibot()->OnPlayerInit(m_ClientId);
 }
 
 CPlayer::~CPlayer()
@@ -74,15 +77,18 @@ void CPlayer::Reset()
 	m_DefEmote = EMOTE_NORMAL;
 	m_Afk = true;
 	m_LastWhisperTo = -1;
-	m_LastSetSpectatorMode = 0;
-	m_aTimeoutCode[0] = '\0';
-	delete m_pLastTarget;
-	m_pLastTarget = new CNetObj_PlayerInput({0});
-	m_LastTargetInit = false;
-	m_TuneZone = 0;
-	m_TuneZoneOld = m_TuneZone;
-	m_Halloween = false;
-	m_FirstPacket = true;
+       m_LastSetSpectatorMode = 0;
+       m_aTimeoutCode[0] = '\0';
+       delete m_pLastTarget;
+       m_pLastTarget = new CNetObj_PlayerInput({0});
+       m_LastTargetInit = false;
+       m_TuneZone = 0;
+       m_TuneZoneOld = m_TuneZone;
+       m_Halloween = false;
+       m_FirstPacket = true;
+
+       m_TitleVisible = false;
+       m_FreezeCommand = false;
 
 	m_SendVoteIndex = -1;
 
@@ -230,18 +236,31 @@ void CPlayer::Tick()
 
 		if(m_pCharacter)
 		{
-			if(m_pCharacter->IsAlive())
-			{
-				ProcessPause();
-				if(!m_Paused)
-					m_ViewPos = m_pCharacter->m_Pos;
-			}
-			else if(!m_pCharacter->IsPaused())
-			{
-				delete m_pCharacter;
-				m_pCharacter = nullptr;
-			}
-		}
+                       if(m_pCharacter->IsAlive())
+                       {
+                               ProcessPause();
+                               if(!m_Paused)
+                                       m_ViewPos = m_pCharacter->m_Pos;
+                               if(Server()->Tick() % 20 == 0)
+                               {
+                                       CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
+                                       if(m_ActiveCosmetic == 1)
+                                       {
+                                               GameServer()->CreatePlayerSpawn(m_pCharacter->m_Pos, Mask);
+                                               GameServer()->CreateSound(m_pCharacter->m_Pos, SOUND_PLAYER_SPAWN, Mask);
+                                       }
+                                       else if(m_ActiveCosmetic == 2)
+                                       {
+                                               GameServer()->CreateDeath(m_pCharacter->m_Pos, m_ClientId, Mask);
+                                       }
+                               }
+                       }
+                       else if(!m_pCharacter->IsPaused())
+                       {
+                               delete m_pCharacter;
+                               m_pCharacter = nullptr;
+                        }
+               }
 		else if(m_Spawning && !m_WeakHookSpawn)
 			TryRespawn();
 	}
@@ -320,7 +339,21 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	StrToInts(pClientInfo->m_aName, std::size(pClientInfo->m_aName), Server()->ClientName(m_ClientId));
-	StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), Server()->ClientClan(m_ClientId));
+       const char *pClanSrc = Server()->ClientClan(m_ClientId);
+       if(m_TitleVisible)
+       {
+               int Auth = Server()->GetAuthedState(m_ClientId);
+               if(Auth == AUTHED_ADMIN)
+                       pClanSrc = "^xFF0000Admin";
+               else if(Auth == AUTHED_MOD)
+                       pClanSrc = "^x0000FFMod";
+               else if(Auth == AUTHED_HELPER)
+                       pClanSrc = "^x00FF00Helper";
+       }
+       const int ClanBytes = sizeof(pClientInfo->m_aClan);
+       char aClan[sizeof(pClientInfo->m_aClan)];
+       str_utf8_truncate(aClan, ClanBytes, pClanSrc, ClanBytes - 1);
+       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), aClan);
 	pClientInfo->m_Country = Server()->ClientCountry(m_ClientId);
 	StrToInts(pClientInfo->m_aSkin, std::size(pClientInfo->m_aSkin), m_TeeInfos.m_aSkinName);
 	pClientInfo->m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
@@ -654,10 +687,17 @@ void CPlayer::Respawn(bool WeakHook)
 CCharacter *CPlayer::ForceSpawn(vec2 Pos)
 {
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
-	m_pCharacter->Spawn(this, Pos);
-	m_Team = 0;
-	return m_pCharacter;
+       m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
+       m_pCharacter->Spawn(this, Pos);
+       m_Team = 0;
+
+       if(m_FreezeCommand)
+       {
+               int Seconds = 0x3fffffff / Server()->TickSpeed();
+               m_pCharacter->Freeze(Seconds);
+       }
+
+       return m_pCharacter;
 }
 
 void CPlayer::SetTeam(int Team, bool DoChatMsg)
@@ -744,10 +784,16 @@ void CPlayer::TryRespawn()
 
 	m_WeakHookSpawn = false;
 	m_Spawning = false;
-	m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
-	m_ViewPos = SpawnPos;
-	m_pCharacter->Spawn(this, SpawnPos);
-	GameServer()->CreatePlayerSpawn(SpawnPos, GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId));
+       m_pCharacter = new(m_ClientId) CCharacter(&GameServer()->m_World, GameServer()->GetLastPlayerInput(m_ClientId));
+       m_ViewPos = SpawnPos;
+       m_pCharacter->Spawn(this, SpawnPos);
+       GameServer()->CreatePlayerSpawn(SpawnPos, GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId));
+
+       if(m_FreezeCommand)
+       {
+               int Seconds = 0x3fffffff / Server()->TickSpeed();
+               m_pCharacter->Freeze(Seconds);
+       }
 
 	if(g_Config.m_SvTeam == SV_TEAM_FORCED_SOLO)
 		m_pCharacter->SetSolo(true);
@@ -1004,15 +1050,20 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 			GameServer()->SendRecord(m_ClientId);
 			break;
 		}
-		case CScorePlayerResult::PLAYER_TIMECP:
-			GameServer()->Score()->PlayerData(m_ClientId)->SetBestTimeCp(Result.m_Data.m_Info.m_aTimeCp);
-			char aBuf[128], aTime[32];
-			str_time_float(Result.m_Data.m_Info.m_Time.value(), TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
-			str_format(aBuf, sizeof(aBuf), "Showing the checkpoint times for '%s' with a race time of %s", Result.m_Data.m_Info.m_aRequestedPlayer, aTime);
-			GameServer()->SendChatTarget(m_ClientId, aBuf);
-			break;
-		}
-	}
+               case CScorePlayerResult::PLAYER_TIMECP:
+                       GameServer()->Score()->PlayerData(m_ClientId)->SetBestTimeCp(Result.m_Data.m_Info.m_aTimeCp);
+                       char aBuf[128], aTime[32];
+                       str_time_float(Result.m_Data.m_Info.m_Time.value(), TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+                       str_format(aBuf, sizeof(aBuf), "Showing the checkpoint times for '%s' with a race time of %s", Result.m_Data.m_Info.m_aRequestedPlayer, aTime);
+                       GameServer()->SendChatTarget(m_ClientId, aBuf);
+                       break;
+               case CScorePlayerResult::BOBUCKS:
+                       m_Bobucks = Result.m_Data.m_BobucksInfo.m_Bobucks;
+                       m_CosmeticsOwned = Result.m_Data.m_BobucksInfo.m_Cosmetics;
+                       m_ActiveCosmetic = Result.m_Data.m_BobucksInfo.m_ActiveCosmetic;
+                       break;
+               }
+       }
 }
 
 vec2 CPlayer::CCameraInfo::ConvertTargetToWorld(vec2 Position, vec2 Target) const

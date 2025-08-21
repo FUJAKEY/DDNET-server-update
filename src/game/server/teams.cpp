@@ -721,28 +721,29 @@ void CGameTeams::OnFinish(CPlayer *Player, int TimeTicks, const char *pTimestamp
 	else
 		GameServer()->SendChat(-1, TEAM_ALL, aBuf, -1., CGameContext::FLAG_SIX);
 
-	float Diff = absolute(Time - pData->m_BestTime);
+       float Diff = absolute(Time - pData->m_BestTime);
+       int Reward = 1000;
+       if(Time - pData->m_BestTime < 0)
+       {
+               // new record \o/
+               Reward += 2000;
+               pData->m_RecordStopTick = Server()->Tick() + Server()->TickSpeed();
+               pData->m_RecordFinishTime = Time;
 
-	if(Time - pData->m_BestTime < 0)
-	{
-		// new record \o/
-		pData->m_RecordStopTick = Server()->Tick() + Server()->TickSpeed();
-		pData->m_RecordFinishTime = Time;
-
-		if(Diff >= 60)
-			str_format(aBuf, sizeof(aBuf), "New record: %d minute(s) %5.2f second(s) better.",
-				(int)Diff / 60, Diff - ((int)Diff / 60 * 60));
-		else
-			str_format(aBuf, sizeof(aBuf), "New record: %5.2f second(s) better.",
-				Diff);
-		if(g_Config.m_SvHideScore)
-			GameServer()->SendChatTarget(ClientId, aBuf, CGameContext::FLAG_SIX);
-		else
-			GameServer()->SendChat(-1, TEAM_ALL, aBuf, -1, CGameContext::FLAG_SIX);
-	}
-	else if(pData->m_BestTime != 0) // tee has already finished?
-	{
-		Server()->StopRecord(ClientId);
+               if(Diff >= 60)
+                       str_format(aBuf, sizeof(aBuf), "New record: %d minute(s) %5.2f second(s) better.",
+                               (int)Diff / 60, Diff - ((int)Diff / 60 * 60));
+               else
+                       str_format(aBuf, sizeof(aBuf), "New record: %5.2f second(s) better.",
+                               Diff);
+               if(g_Config.m_SvHideScore)
+                       GameServer()->SendChatTarget(ClientId, aBuf, CGameContext::FLAG_SIX);
+               else
+                       GameServer()->SendChat(-1, TEAM_ALL, aBuf, -1, CGameContext::FLAG_SIX);
+       }
+       else if(pData->m_BestTime != 0) // tee has already finished?
+       {
+               Server()->StopRecord(ClientId);
 
 		if(Diff <= 0.005f)
 		{
@@ -767,7 +768,10 @@ void CGameTeams::OnFinish(CPlayer *Player, int TimeTicks, const char *pTimestamp
 		pData->m_RecordFinishTime = Time;
 	}
 
-	GameServer()->SendFinish(ClientId, Time, pData->m_BestTime);
+       GameServer()->SendFinish(ClientId, Time, pData->m_BestTime);
+       GameServer()->AddBobucks(ClientId, Reward);
+       str_format(aBuf, sizeof(aBuf), "You earned %d bobucks. Balance: %d", Reward, GameServer()->GetBobucks(ClientId));
+       GameServer()->SendChatTarget(ClientId, aBuf);
 	bool CallSaveScore = g_Config.m_SvSaveWorseScores;
 	bool NeedToSendNewPersonalRecord = false;
 	if(!pData->m_BestTime || Time < pData->m_BestTime)
