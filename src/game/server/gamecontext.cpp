@@ -4709,7 +4709,7 @@ void CGameContext::AddBobucks(int ClientId, int Amount)
        if(ClientId < 0 || ClientId >= MAX_CLIENTS)
                return;
        CPlayer *pPl = m_apPlayers[ClientId];
-       if(!pPl)
+       if(!pPl || !Server()->ClientIngame(ClientId))
                return;
        pPl->m_Bobucks += Amount;
        const char *pName = Server()->ClientName(ClientId);

@@ -275,10 +275,7 @@ void CGameContext::ConAddMoney(IConsole::IResult *pResult, void *pUserData)
 {
        CGameContext *pSelf = (CGameContext *)pUserData;
        int ClientId = pResult->m_ClientId;
-       if(!CheckClientId(ClientId))
-               return;
-       CPlayer *pPl = pSelf->m_apPlayers[ClientId];
-       if(!pPl)
+       if(!CheckClientId(ClientId) || !pSelf->m_apPlayers[ClientId] || !pSelf->Server()->ClientIngame(ClientId))
                return;
        int Amount = pResult->GetInteger(0);
        pSelf->AddBobucks(ClientId, Amount);
