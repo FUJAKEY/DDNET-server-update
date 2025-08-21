@@ -844,7 +844,8 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
                pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
        if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
                return false;
-       if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
+       int NumUpdated;
+       if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
                return false;
 
        str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetic) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
@@ -854,7 +855,7 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
        pSqlServer->BindInt(2, pData->m_Bobucks);
        pSqlServer->BindInt(3, pData->m_Cosmetics);
        pSqlServer->BindInt(4, pData->m_ActiveCosmetic);
-       if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
+       if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
                return false;
        return true;
 }
@@ -877,12 +878,13 @@ bool CScoreWorker::LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
        }
        pResult->SetVariant(CScorePlayerResult::BOBUCKS);
        char aBuf[256];
+       int NumUpdated;
        str_format(aBuf, sizeof(aBuf),
                "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
                pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
        if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
                return true;
-       if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
+       if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
                return true;
 
        str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetic FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
