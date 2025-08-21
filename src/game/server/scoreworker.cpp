@@ -829,34 +829,34 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
        {
                str_copy(pError, "no database connection", ErrorSize);
                dbg_msg("sql", "%s", pError);
-               return true;
+               return false;
        }
        const auto *pData = dynamic_cast<const CSqlBobucksSave *>(pGameData);
        if(!pData)
        {
                str_copy(pError, "invalid data for SaveBobucks", ErrorSize);
                dbg_msg("sql", "%s", pError);
-               return true;
+               return false;
        }
        char aBuf[256];
        str_format(aBuf, sizeof(aBuf),
                "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
                pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
        if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
-               return true;
+               return false;
        if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
-               return true;
+               return false;
 
        str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetic) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
        if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
-               return true;
+               return false;
        pSqlServer->BindString(1, pData->m_aName);
        pSqlServer->BindInt(2, pData->m_Bobucks);
        pSqlServer->BindInt(3, pData->m_Cosmetics);
        pSqlServer->BindInt(4, pData->m_ActiveCosmetic);
        if(!pSqlServer->ExecuteUpdate(nullptr, pError, ErrorSize))
-               return true;
-       return false;
+               return false;
+       return true;
 }
 
 bool CScoreWorker::LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
