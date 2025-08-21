@@ -4562,6 +4562,8 @@ void CGameContext::SnapFakePlayers(int SnappingClient)
 {
        const auto &Names = m_FakeNames;
        int NameCount = Names.size();
+       if(NameCount == 0)
+               return;
        // Клиентский scoreboard учитывает только команды TEAM_RED и TEAM_BLUE,
        // поэтому для снапшота всегда используем красную команду, чтобы фейковые
        // игроки корректно отображались в табе.
