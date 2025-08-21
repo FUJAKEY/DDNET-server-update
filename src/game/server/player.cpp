@@ -7,6 +7,7 @@
 #include "score.h"
 
 #include <base/system.h>
+#include <base/color.h>
 
 #include <engine/antibot.h>
 #include <engine/server.h>
@@ -30,6 +31,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, uint32_t UniqueClientId, int ClientI
        m_Bobucks = 0;
        m_CosmeticsOwned = 0;
        m_ActiveCosmetic = 0;
+       m_RainbowHue = 0.0f;
         GameServer()->Antibot()->OnPlayerInit(m_ClientId);
 }
 
@@ -68,11 +70,13 @@ void CPlayer::Reset()
 	m_LastPlaytime = 0;
 	m_ChatScore = 0;
 	m_Moderating = false;
-	m_EyeEmoteEnabled = true;
-	if(Server()->IsSixup(m_ClientId))
-		m_TimerType = TIMERTYPE_SIXUP;
-	else
-		m_TimerType = (g_Config.m_SvDefaultTimerType == TIMERTYPE_GAMETIMER || g_Config.m_SvDefaultTimerType == TIMERTYPE_GAMETIMER_AND_BROADCAST) ? TIMERTYPE_BROADCAST : g_Config.m_SvDefaultTimerType;
+       m_EyeEmoteEnabled = true;
+       if(Server()->IsSixup(m_ClientId))
+               m_TimerType = TIMERTYPE_SIXUP;
+       else
+               m_TimerType = (g_Config.m_SvDefaultTimerType == TIMERTYPE_GAMETIMER || g_Config.m_SvDefaultTimerType == TIMERTYPE_GAMETIMER_AND_BROADCAST) ? TIMERTYPE_BROADCAST : g_Config.m_SvDefaultTimerType;
+
+       m_RainbowHue = 0.0f;
 
 	m_DefEmote = EMOTE_NORMAL;
 	m_Afk = true;
@@ -252,12 +256,23 @@ void CPlayer::Tick()
                                        if(m_ActiveCosmetic == 1)
                                        {
                                                GameServer()->CreatePlayerSpawn(m_pCharacter->m_Pos, Mask);
-                                               GameServer()->CreateSound(m_pCharacter->m_Pos, SOUND_PLAYER_SPAWN, Mask);
                                        }
                                        else if(m_ActiveCosmetic == 2)
                                        {
                                                GameServer()->CreateDeath(m_pCharacter->m_Pos, m_ClientId, Mask);
                                        }
+                               }
+                               if(m_ActiveCosmetic == 3 && Server()->Tick() % 5 == 0)
+                               {
+                                       m_RainbowHue += 0.02f;
+                                       if(m_RainbowHue > 1.0f)
+                                               m_RainbowHue -= 1.0f;
+                                       unsigned Color = ColorHSLA(m_RainbowHue, 1.0f, 0.5f).Pack();
+                                       m_TeeInfos.m_UseCustomColor = 1;
+                                       m_TeeInfos.m_ColorBody = Color;
+                                       m_TeeInfos.m_ColorFeet = Color;
+                                       m_TeeInfos.ToSixup();
+                                       GameServer()->SendSkinChange(m_ClientId);
                                }
                        }
                        else if(!m_pCharacter->IsPaused())

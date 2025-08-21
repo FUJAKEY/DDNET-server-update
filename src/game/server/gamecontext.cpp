@@ -803,6 +803,24 @@ void CGameContext::SendBroadcast(const char *pText, int ClientId, bool IsImporta
 	m_apPlayers[ClientId]->m_LastBroadcastImportance = IsImportant;
 }
 
+void CGameContext::SendSkinChange(int ClientId)
+{
+       CPlayer *pPlayer = m_apPlayers[ClientId];
+       if(!pPlayer)
+               return;
+
+       protocol7::CNetMsg_Sv_SkinChange Msg;
+       Msg.m_ClientId = ClientId;
+       for(int p = 0; p < protocol7::NUM_SKINPARTS; p++)
+       {
+               Msg.m_apSkinPartNames[p] = pPlayer->m_TeeInfos.m_apSkinPartNames[p];
+               Msg.m_aSkinPartColors[p] = pPlayer->m_TeeInfos.m_aSkinPartColors[p];
+               Msg.m_aUseCustomColors[p] = pPlayer->m_TeeInfos.m_aUseCustomColors[p];
+       }
+
+       Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
+}
+
 void CGameContext::StartVote(const char *pDesc, const char *pCommand, const char *pReason, const char *pSixupDesc)
 {
 	// reset votes

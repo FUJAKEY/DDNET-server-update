@@ -205,6 +205,7 @@ public:
        int m_Bobucks;
        int m_CosmeticsOwned;
        int m_ActiveCosmetic;
+       float m_RainbowHue;
 
        bool m_Moderating;
 

@@ -306,9 +306,10 @@ public:
 	void SendStartWarning(int ClientId, const char *pMessage);
 	void SendEmoticon(int ClientId, int Emoticon, int TargetClientId) const;
 	void SendWeaponPickup(int ClientId, int Weapon) const;
-	void SendMotd(int ClientId) const;
-	void SendSettings(int ClientId) const;
-	void SendBroadcast(const char *pText, int ClientId, bool IsImportant = true);
+       void SendMotd(int ClientId) const;
+       void SendSettings(int ClientId) const;
+       void SendBroadcast(const char *pText, int ClientId, bool IsImportant = true);
+       void SendSkinChange(int ClientId);
 
 	void List(int ClientId, const char *pFilter);
 
