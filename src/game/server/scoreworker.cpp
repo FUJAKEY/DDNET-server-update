@@ -825,7 +825,19 @@ bool CScoreWorker::SaveTeamScore(IDbConnection *pSqlServer, const ISqlData *pGam
 
 bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize)
 {
+       if(!pSqlServer)
+       {
+               str_copy(pError, "no database connection", ErrorSize);
+               dbg_msg("sql", "%s", pError);
+               return true;
+       }
        const auto *pData = dynamic_cast<const CSqlBobucksSave *>(pGameData);
+       if(!pData)
+       {
+               str_copy(pError, "invalid data for SaveBobucks", ErrorSize);
+               dbg_msg("sql", "%s", pError);
+               return true;
+       }
        char aBuf[256];
        str_format(aBuf, sizeof(aBuf),
                "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
@@ -849,8 +861,20 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
 
 bool CScoreWorker::LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
 {
+       if(!pSqlServer)
+       {
+               str_copy(pError, "no database connection", ErrorSize);
+               dbg_msg("sql", "%s", pError);
+               return true;
+       }
        const auto *pData = dynamic_cast<const CSqlBobucksRequest *>(pGameData);
-       auto *pResult = dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get());
+       auto *pResult = pGameData ? dynamic_cast<CScorePlayerResult *>(pGameData->m_pResult.get()) : nullptr;
+       if(!pData || !pResult)
+       {
+               str_copy(pError, "invalid data for LoadBobucks", ErrorSize);
+               dbg_msg("sql", "%s", pError);
+               return true;
+       }
        pResult->SetVariant(CScorePlayerResult::BOBUCKS);
        char aBuf[256];
        str_format(aBuf, sizeof(aBuf),

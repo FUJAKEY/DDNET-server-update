@@ -388,7 +388,10 @@ void CScore::GetSaves(int ClientId)
 void CScore::SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int Active)
 {
        if(!m_pPool)
+       {
+               dbg_msg("sql", "cannot save bobucks for %s: no database connection", pName);
                return;
+       }
        auto Tmp = std::make_unique<CSqlBobucksSave>();
        str_copy(Tmp->m_aName, pName, sizeof(Tmp->m_aName));
        Tmp->m_Bobucks = Bobucks;
