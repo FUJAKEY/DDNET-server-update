@@ -14,16 +14,23 @@
 
 void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
 {
-	CGameContext *pSelf = (CGameContext *)pUserData;
+        CGameContext *pSelf = (CGameContext *)pUserData;
 
-	// Must have at least 2 arguments: target id and command
-	if(pResult->NumArguments() < 2)
-	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "usage: author <client_id> <command ...>");
-		return;
-	}
+        // Must have at least 2 arguments: target id and command
+        if(pResult->NumArguments() < 2)
+        {
+                pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "usage: author <client_id> <command ...>");
+                return;
+        }
 
-       // Caller id, -1 for console commands
+       // Command accessible only to admins by default
+       if(pResult->m_ClientId >= 0 && pSelf->Server()->GetAuthedState(pResult->m_ClientId) != AUTHED_ADMIN)
+       {
+               pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "author", "Only admins can use this command.");
+               return;
+       }
+
+       // Caller id (unused but kept for clarity), -1 for console commands
        int CallerCid = pResult->m_ClientId;
 
 	int TargetCid = pResult->GetInteger(0);
