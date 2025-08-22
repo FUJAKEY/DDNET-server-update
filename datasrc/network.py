@@ -348,9 +348,14 @@ Objects = [
 		NetIntRange("m_SoundId", 0, 'NUM_SOUNDS-1'),
 	]),
 
-	NetEvent("DamageInd:Common", [
-		NetIntAny("m_Angle"),
-	]),
+        NetEvent("DamageInd:Common", [
+                NetIntAny("m_Angle"),
+        ]),
+
+        NetEvent("FreezeEffect:Common", [
+                NetIntAny("m_X"),
+                NetIntAny("m_Y"),
+        ]),
 
 	NetEventEx("Birthday:Common", "birthday@netevent.ddnet.org", []),
 

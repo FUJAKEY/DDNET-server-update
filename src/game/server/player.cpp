@@ -280,7 +280,7 @@ void CPlayer::Tick()
                                        CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
                                        if(m_ActiveCosmetics & 1)
                                        {
-                                               GameServer()->CreateResurrection(m_pCharacter->m_Pos, Mask);
+                                               GameServer()->CreateFreezeEffect(m_pCharacter->m_Pos, Mask);
                                        }
                                        if(m_ActiveCosmetics & 2)
                                        {

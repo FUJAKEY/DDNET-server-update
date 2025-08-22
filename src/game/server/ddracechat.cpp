@@ -51,7 +51,7 @@ void CGameContext::ConCosmetics(IConsole::IResult *pResult, void *pUserData)
        int ClientId = pResult->m_ClientId;
        if(!CheckClientId(ClientId))
                return;
-       pSelf->SendChatTarget(ClientId, "1. Resurrection particles - 3000 bobucks");
+       pSelf->SendChatTarget(ClientId, "1. Freeze particles - 3000 bobucks");
        pSelf->SendChatTarget(ClientId, "2. Death particles - 5000 bobucks");
        pSelf->SendChatTarget(ClientId, "3. Rainbow skin - 2000 bobucks");
        pSelf->SendChatTarget(ClientId, "Earn 1000 bobucks per finish and 2000 for beating your record.");
@@ -86,7 +86,7 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
                pPl->m_CosmeticsOwned |= 1;
                pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                char aBuf[128];
-               str_format(aBuf, sizeof(aBuf), "Purchased Resurrection particles. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
+               str_format(aBuf, sizeof(aBuf), "Purchased Freeze particles. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
                pSelf->SendChatTarget(ClientId, aBuf);
        }
        else if(Num == 2)
@@ -158,7 +158,7 @@ void CGameContext::ConInventory(IConsole::IResult *pResult, void *pUserData)
        bool HasAny = false;
        if(pPl->m_CosmeticsOwned & 1)
        {
-               pSelf->SendChatTarget(ClientId, "1. Resurrection particles - use with /use 1");
+               pSelf->SendChatTarget(ClientId, "1. Freeze particles - use with /use 1");
                HasAny = true;
        }
        if(pPl->m_CosmeticsOwned & 2)
@@ -232,7 +232,7 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
                }
                pPl->m_ActiveCosmetics |= 1;
                pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
-               pSelf->SendChatTarget(ClientId, "Using Resurrection particles.");
+               pSelf->SendChatTarget(ClientId, "Using Freeze particles.");
                return;
        }
        if(Num == 2)

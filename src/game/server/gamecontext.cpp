@@ -383,10 +383,14 @@ void CGameContext::CreatePlayerSpawn(vec2 Pos, CClientMask Mask)
         }
 }
 
-void CGameContext::CreateResurrection(vec2 Pos, CClientMask Mask)
+void CGameContext::CreateFreezeEffect(vec2 Pos, CClientMask Mask)
 {
-        // use damage indicators to mimic spawn particles without triggering sound
-        CreateDamageInd(Pos, 0, 32, Mask);
+       CNetEvent_FreezeEffect *pEvent = m_Events.Create<CNetEvent_FreezeEffect>(Mask);
+       if(pEvent)
+       {
+               pEvent->m_X = (int)Pos.x;
+               pEvent->m_Y = (int)Pos.y;
+       }
 }
 
 void CGameContext::CreateDeath(vec2 Pos, int ClientId, CClientMask Mask)
