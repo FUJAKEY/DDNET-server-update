@@ -385,6 +385,9 @@ void CGameContext::CreatePlayerSpawn(vec2 Pos, CClientMask Mask)
 
 void CGameContext::CreateFreezeEffect(vec2 Pos, CClientMask Mask)
 {
+       if(Mask.none())
+               return;
+
        CNetEvent_FreezeEffect *pEvent = m_Events.Create<CNetEvent_FreezeEffect>(Mask);
        if(pEvent)
        {

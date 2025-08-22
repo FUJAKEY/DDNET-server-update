@@ -278,8 +278,14 @@ void CPlayer::Tick()
                              if(m_ActiveCosmetics & 1)
                              {
                             CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
+                            for(int i = 0; i < MAX_CLIENTS; ++i)
+                            {
+                                   if(Server()->GetClientVersion(i) < VERSION_DDNET_FREEZEEFFECT)
+                                           Mask.reset(i);
+                            }
                             Mask.set(m_ClientId);
-                            GameServer()->CreateFreezeEffect(m_pCharacter->m_Pos, Mask);
+                            if(!Mask.none())
+                                   GameServer()->CreateFreezeEffect(m_pCharacter->m_Pos, Mask);
                             }
                               if((m_ActiveCosmetics & 2) && Server()->Tick() % 20 == 0)
                               {
