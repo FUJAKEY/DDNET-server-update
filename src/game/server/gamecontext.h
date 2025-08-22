@@ -450,6 +450,9 @@ private:
        static void ConFreeze(IConsole::IResult *pResult, void *pUserData);
        static void ConVisibleTitle(IConsole::IResult *pResult, void *pUserData);
        static void ConAddMoney(IConsole::IResult *pResult, void *pUserData);
+       static void ConGiveCosmetics(IConsole::IResult *pResult, void *pUserData);
+       static void ConTakeCosmetics(IConsole::IResult *pResult, void *pUserData);
+       static void ConShowCosmetics(IConsole::IResult *pResult, void *pUserData);
        static void ConDeep(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnDeep(IConsole::IResult *pResult, void *pUserData);
 	static void ConLiveFreeze(IConsole::IResult *pResult, void *pUserData);

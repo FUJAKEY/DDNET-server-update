@@ -1114,10 +1114,16 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		if(!pCharacter)
 			return;
 
-		pCore->Write(pCharacter);
+                pCore->Write(pCharacter);
+               if(m_pPlayer->m_ActiveCosmetics & 8 && SnappingClient != Id)
+               {
+                       pCharacter->m_Angle += (int)(pi * 256.0f);
+                       if(pCharacter->m_Angle > (int)(pi * 256.0f))
+                               pCharacter->m_Angle -= (int)(2.0f * pi * 256.0f);
+               }
 
-		pCharacter->m_Tick = Tick;
-		pCharacter->m_Emote = Emote;
+                pCharacter->m_Tick = Tick;
+                pCharacter->m_Emote = Emote;
 
 		if(pCharacter->m_HookedPlayer != -1)
 		{
@@ -1139,11 +1145,13 @@ void CCharacter::SnapCharacter(int SnappingClient, int Id)
 		if(!pCharacter)
 			return;
 
-		pCore->Write(reinterpret_cast<CNetObj_CharacterCore *>(static_cast<protocol7::CNetObj_CharacterCore *>(pCharacter)));
-		if(pCharacter->m_Angle > (int)(pi * 256.0f))
-		{
-			pCharacter->m_Angle -= (int)(2.0f * pi * 256.0f);
-		}
+                pCore->Write(reinterpret_cast<CNetObj_CharacterCore *>(static_cast<protocol7::CNetObj_CharacterCore *>(pCharacter)));
+               if(m_pPlayer->m_ActiveCosmetics & 8 && SnappingClient != Id)
+                       pCharacter->m_Angle += (int)(pi * 256.0f);
+                if(pCharacter->m_Angle > (int)(pi * 256.0f))
+                {
+                        pCharacter->m_Angle -= (int)(2.0f * pi * 256.0f);
+                }
 
 		// m_HookTick can be negative when using the hook_duration tune, which 0.7 clients
 		// will consider invalid. https://github.com/ddnet/ddnet/issues/3915
@@ -1310,8 +1318,13 @@ void CCharacter::Snap(int SnappingClient)
 	{
 		pDDNetCharacter->m_Flags |= CHARACTERFLAG_TEAM0_MODE;
 	}
-	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
-	pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
+       pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
+       pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
+       if(m_pPlayer->m_ActiveCosmetics & 8 && SnappingClient != Id)
+       {
+               pDDNetCharacter->m_TargetX = -pDDNetCharacter->m_TargetX;
+               pDDNetCharacter->m_TargetY = -pDDNetCharacter->m_TargetY;
+       }
 
 	// -1 is the default value, SnapNewItem zeroes the object, so it would incorrectly become 0
 	pDDNetCharacter->m_TuneZoneOverride = -1;

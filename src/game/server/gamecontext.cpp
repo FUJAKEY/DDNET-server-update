@@ -3891,6 +3891,12 @@ void CGameContext::RegisterDDRaceCommands()
        Console()->ExecuteLine("access_level visible_title 2", -1, false);
        Console()->Register("addmoney", "?v[id] i[amount]", CFGFLAG_SERVER, ConAddMoney, this, "Add/subtract bobucks (optionally specify target id)");
        Console()->ExecuteLine("access_level addmoney 0", -1, false);
+       Console()->Register("give_cosmetics", "v[id] i[cosmetic]", CFGFLAG_SERVER, ConGiveCosmetics, this, "Grant cosmetic to player");
+       Console()->ExecuteLine("access_level give_cosmetics 0", -1, false);
+       Console()->Register("take_cosmetics", "v[id] i[cosmetic]", CFGFLAG_SERVER, ConTakeCosmetics, this, "Remove cosmetic from player");
+       Console()->ExecuteLine("access_level take_cosmetics 0", -1, false);
+       Console()->Register("show_cosmetics", "v[id]", CFGFLAG_SERVER, ConShowCosmetics, this, "Show player's cosmetics");
+       Console()->ExecuteLine("access_level show_cosmetics 0", -1, false);
 
 	Console()->Register("set_team_ddr", "v[id] i[team]", CFGFLAG_SERVER, ConSetDDRTeam, this, "Set ddrace team of a player");
 	Console()->Register("uninvite", "v[id] i[team]", CFGFLAG_SERVER, ConUninvite, this, "Uninvite player from team");

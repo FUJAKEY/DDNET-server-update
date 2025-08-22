@@ -2,6 +2,7 @@
 #include "gamecontext.h"
 
 #include <base/math.h>
+#include <base/system.h>
 #include <engine/antibot.h>
 
 #include <engine/shared/config.h>
@@ -10,6 +11,7 @@
 #include <game/server/player.h>
 #include <game/server/save.h>
 #include <game/server/teams.h>
+#include "score.h"
 
 
 void CGameContext::ConAuthor(IConsole::IResult *pResult, void *pUserData)
@@ -318,6 +320,108 @@ void CGameContext::ConDeep(IConsole::IResult *pResult, void *pUserData)
 	CCharacter *pChr = pSelf->GetPlayerChar(pResult->m_ClientId);
 	if(pChr)
 		pChr->SetDeepFrozen(true);
+}
+
+static int CosmeticBit(int Id)
+{
+       switch(Id)
+       {
+       case 1: return 1;
+       case 2: return 2;
+       case 3: return 4;
+       case 4: return 8;
+       default: return 0;
+       }
+}
+
+void CGameContext::ConGiveCosmetics(IConsole::IResult *pResult, void *pUserData)
+{
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       int Target = pResult->GetVictim();
+       int Cosmetic = pResult->GetInteger(1);
+       int Bit = CosmeticBit(Cosmetic);
+       if(Target < 0 || Target >= MAX_CLIENTS || Bit == 0 || !pSelf->m_apPlayers[Target] || !pSelf->Server()->ClientIngame(Target))
+       {
+               pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "give_cosmetics", "Invalid target or cosmetic");
+               return;
+       }
+       CPlayer *pPl = pSelf->m_apPlayers[Target];
+       if(pPl->m_CosmeticsOwned & Bit)
+       {
+               pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "give_cosmetics", "Player already owns this cosmetic");
+               return;
+       }
+       pPl->m_CosmeticsOwned |= Bit;
+       pSelf->Score()->SaveBobucks(pSelf->Server()->ClientName(Target), pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
+       pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "give_cosmetics", "cosmetic granted");
+}
+
+void CGameContext::ConTakeCosmetics(IConsole::IResult *pResult, void *pUserData)
+{
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       int Target = pResult->GetVictim();
+       int Cosmetic = pResult->GetInteger(1);
+       int Bit = CosmeticBit(Cosmetic);
+       if(Target < 0 || Target >= MAX_CLIENTS || Bit == 0 || !pSelf->m_apPlayers[Target] || !pSelf->Server()->ClientIngame(Target))
+       {
+               pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "take_cosmetics", "Invalid target or cosmetic");
+               return;
+       }
+       CPlayer *pPl = pSelf->m_apPlayers[Target];
+       if(!(pPl->m_CosmeticsOwned & Bit))
+       {
+               pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "take_cosmetics", "Player doesn't own this cosmetic");
+               return;
+       }
+       pPl->m_CosmeticsOwned &= ~Bit;
+       pPl->m_ActiveCosmetics &= ~Bit;
+       pSelf->Score()->SaveBobucks(pSelf->Server()->ClientName(Target), pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
+       pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "take_cosmetics", "cosmetic removed");
+}
+
+void CGameContext::ConShowCosmetics(IConsole::IResult *pResult, void *pUserData)
+{
+       CGameContext *pSelf = (CGameContext *)pUserData;
+       int Target = pResult->GetVictim();
+       if(Target < 0 || Target >= MAX_CLIENTS || !pSelf->m_apPlayers[Target] || !pSelf->Server()->ClientIngame(Target))
+       {
+               pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "show_cosmetics", "Invalid or offline target");
+               return;
+       }
+       CPlayer *pPl = pSelf->m_apPlayers[Target];
+       char aBuf[128];
+       char aOwned[32] = "";
+       char aActive[32] = "";
+       bool First = true;
+       for(int i = 1; i <= 4; i++)
+       {
+               int Bit = CosmeticBit(i);
+               if(pPl->m_CosmeticsOwned & Bit)
+               {
+                       if(!First)
+                               str_append(aOwned, ",", sizeof(aOwned));
+                       char aNum[4];
+                       str_format(aNum, sizeof(aNum), "%d", i);
+                       str_append(aOwned, aNum, sizeof(aOwned));
+                       First = false;
+               }
+       }
+       First = true;
+       for(int i = 1; i <= 4; i++)
+       {
+               int Bit = CosmeticBit(i);
+               if(pPl->m_ActiveCosmetics & Bit)
+               {
+                       if(!First)
+                               str_append(aActive, ",", sizeof(aActive));
+                       char aNum[4];
+                       str_format(aNum, sizeof(aNum), "%d", i);
+                       str_append(aActive, aNum, sizeof(aActive));
+                       First = false;
+               }
+       }
+       str_format(aBuf, sizeof(aBuf), "Owned: %s | Active: %s", aOwned, aActive);
+       pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "show_cosmetics", aBuf);
 }
 
 void CGameContext::ConUnDeep(IConsole::IResult *pResult, void *pUserData)

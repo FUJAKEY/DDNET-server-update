@@ -51,9 +51,10 @@ void CGameContext::ConCosmetics(IConsole::IResult *pResult, void *pUserData)
        int ClientId = pResult->m_ClientId;
        if(!CheckClientId(ClientId))
                return;
-       pSelf->SendChatTarget(ClientId, "1. Freeze particles - 3000 bobucks");
+       pSelf->SendChatTarget(ClientId, "1. Freeze particles - temporarily unavailable");
        pSelf->SendChatTarget(ClientId, "2. Death particles - 5000 bobucks");
        pSelf->SendChatTarget(ClientId, "3. Rainbow skin - 2000 bobucks");
+       pSelf->SendChatTarget(ClientId, "4. Fake aim - 7000 bobucks");
        pSelf->SendChatTarget(ClientId, "Earn 1000 bobucks per finish and 2000 for beating your record.");
        pSelf->SendChatTarget(ClientId, "Purchase with /buy <number>");
 }
@@ -71,23 +72,8 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
        const char *pName = pSelf->Server()->ClientName(ClientId);
        if(Num == 1)
        {
-               const int Cost = 3000;
-               if(pPl->m_CosmeticsOwned & 1)
-               {
-                       pSelf->SendChatTarget(ClientId, "You already own this cosmetic.");
-                       return;
-               }
-               if(pPl->m_Bobucks < Cost)
-               {
-                       pSelf->SendChatTarget(ClientId, "Not enough bobucks.");
-                       return;
-               }
-               pPl->m_Bobucks -= Cost;
-               pPl->m_CosmeticsOwned |= 1;
-               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
-               char aBuf[128];
-               str_format(aBuf, sizeof(aBuf), "Purchased Freeze particles. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
-               pSelf->SendChatTarget(ClientId, aBuf);
+               pSelf->SendChatTarget(ClientId, "This cosmetic is temporarily disabled.");
+               return;
        }
        else if(Num == 2)
        {
@@ -129,6 +115,26 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
                str_format(aBuf, sizeof(aBuf), "Purchased Rainbow skin. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
                pSelf->SendChatTarget(ClientId, aBuf);
        }
+       else if(Num == 4)
+       {
+               const int Cost = 7000;
+               if(pPl->m_CosmeticsOwned & 8)
+               {
+                       pSelf->SendChatTarget(ClientId, "You already own this cosmetic.");
+                       return;
+               }
+               if(pPl->m_Bobucks < Cost)
+               {
+                       pSelf->SendChatTarget(ClientId, "Not enough bobucks.");
+                       return;
+               }
+               pPl->m_Bobucks -= Cost;
+               pPl->m_CosmeticsOwned |= 8;
+               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
+               char aBuf[128];
+               str_format(aBuf, sizeof(aBuf), "Purchased Fake aim. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
+               pSelf->SendChatTarget(ClientId, aBuf);
+       }
        else
        {
                pSelf->SendChatTarget(ClientId, "Unknown cosmetic.");
@@ -158,7 +164,7 @@ void CGameContext::ConInventory(IConsole::IResult *pResult, void *pUserData)
        bool HasAny = false;
        if(pPl->m_CosmeticsOwned & 1)
        {
-               pSelf->SendChatTarget(ClientId, "1. Freeze particles - use with /use 1");
+               pSelf->SendChatTarget(ClientId, "1. Freeze particles - temporarily disabled");
                HasAny = true;
        }
        if(pPl->m_CosmeticsOwned & 2)
@@ -169,6 +175,11 @@ void CGameContext::ConInventory(IConsole::IResult *pResult, void *pUserData)
        if(pPl->m_CosmeticsOwned & 4)
        {
                pSelf->SendChatTarget(ClientId, "3. Rainbow skin - use with /use 3");
+               HasAny = true;
+       }
+       if(pPl->m_CosmeticsOwned & 8)
+       {
+               pSelf->SendChatTarget(ClientId, "4. Fake aim - use with /use 4");
                HasAny = true;
        }
        if(!HasAny)
@@ -196,6 +207,14 @@ void CGameContext::ConInventory(IConsole::IResult *pResult, void *pUserData)
                        if(!First)
                                str_append(aList, ",", sizeof(aList));
                        str_append(aList, "3", sizeof(aList));
+                       First = false;
+               }
+               if(pPl->m_ActiveCosmetics & 8)
+               {
+                       if(!First)
+                               str_append(aList, ",", sizeof(aList));
+                       str_append(aList, "4", sizeof(aList));
+                       First = false;
                }
                char aBuf[128];
                str_format(aBuf, sizeof(aBuf), "Currently using cosmetics %s. Use /use 0 to clear.", aList);
@@ -225,14 +244,7 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
        }
        if(Num == 1)
        {
-               if(!(pPl->m_CosmeticsOwned & 1))
-               {
-                       pSelf->SendChatTarget(ClientId, "You don't own this cosmetic.");
-                       return;
-               }
-               pPl->m_ActiveCosmetics |= 1;
-               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
-               pSelf->SendChatTarget(ClientId, "Using Freeze particles.");
+               pSelf->SendChatTarget(ClientId, "This cosmetic is temporarily disabled.");
                return;
        }
        if(Num == 2)
@@ -260,6 +272,18 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
                pPl->m_RainbowHue = 0.0f;
                pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                pSelf->SendChatTarget(ClientId, "Using Rainbow skin.");
+               return;
+       }
+       if(Num == 4)
+       {
+               if(!(pPl->m_CosmeticsOwned & 8))
+               {
+                       pSelf->SendChatTarget(ClientId, "You don't own this cosmetic.");
+                       return;
+               }
+               pPl->m_ActiveCosmetics |= 8;
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
+               pSelf->SendChatTarget(ClientId, "Using Fake aim.");
                return;
        }
        pSelf->SendChatTarget(ClientId, "Unknown cosmetic.");

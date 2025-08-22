@@ -1113,7 +1113,7 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
                case CScorePlayerResult::BOBUCKS:
                        m_Bobucks = Result.m_Data.m_BobucksInfo.m_Bobucks;
                        m_CosmeticsOwned = Result.m_Data.m_BobucksInfo.m_Cosmetics;
-                       m_ActiveCosmetics = Result.m_Data.m_BobucksInfo.m_ActiveCosmetics;
+                       m_ActiveCosmetics = Result.m_Data.m_BobucksInfo.m_ActiveCosmetics & ~1;
                        break;
                }
        }
