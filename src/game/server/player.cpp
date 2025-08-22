@@ -280,7 +280,7 @@ void CPlayer::Tick()
                                        CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
                                        if(m_ActiveCosmetic == 1)
                                        {
-                                               GameServer()->CreateDamageInd(m_pCharacter->m_Pos, 0, 12, Mask);
+                                               GameServer()->CreatePlayerSpawn(m_pCharacter->m_Pos, Mask);
                                        }
                                        else if(m_ActiveCosmetic == 2)
                                        {
