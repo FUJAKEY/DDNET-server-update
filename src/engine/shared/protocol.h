@@ -132,8 +132,6 @@ enum
         VERSION_DDNET_RECONNECT = 18090,
         VERSION_DDNET_128_PLAYERS = 19000,
         VERSION_DDNET_PREINPUT = 19040,
-        // clients with this or higher version understand FreezeEffect events
-        VERSION_DDNET_FREEZEEFFECT = 20000,
 };
 
 enum
