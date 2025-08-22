@@ -275,18 +275,13 @@ void CPlayer::Tick()
                                ProcessPause();
                                if(!m_Paused)
                                        m_ViewPos = m_pCharacter->m_Pos;
-                               if(Server()->Tick() % 20 == 0)
-                               {
+                              if(m_ActiveCosmetics & 1)
+                                      m_pCharacter->FlashFreezeEffect();
+                              if((m_ActiveCosmetics & 2) && Server()->Tick() % 20 == 0)
+                              {
                                       CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
                                       Mask.set(m_ClientId);
-                                     if(m_ActiveCosmetics & 1)
-                                     {
-                                             m_pCharacter->FlashFreezeEffect();
-                                     }
-                                      if(m_ActiveCosmetics & 2)
-                                      {
-                                              GameServer()->CreateDeath(m_pCharacter->m_Pos, m_ClientId, Mask);
-                                      }
+                                      GameServer()->CreateDeath(m_pCharacter->m_Pos, m_ClientId, Mask);
                               }
                                if((m_ActiveCosmetics & 4) && Server()->Tick() % 5 == 0)
                                {
