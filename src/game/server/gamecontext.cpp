@@ -3,6 +3,8 @@
 #include "gamecontext.h"
 
 #include <vector>
+#include <algorithm>
+#include <limits>
 
 #include "teeinfo.h"
 #include <antibot/antibot_data.h>
@@ -23,6 +25,7 @@
 
 #include <game/collision.h>
 #include <game/gamecore.h>
+#include <game/teamscore.h>
 #include <game/mapitems.h>
 #include <game/version.h>
 
@@ -93,7 +96,14 @@ void CGameContext::Construct(int Resetting)
 
 	m_SqlRandomMapResult = nullptr;
 
-	m_pScore = nullptr;
+        m_pScore = nullptr;
+
+        m_FakePlayerCount = 0;
+        m_FakePlayersOnline = false;
+       m_FakeTeam = -1;
+       m_FakeNames = {"Гейшасквад228", "Гандонсквад228", "мамарахалсквад228", "Пельмешсквад228", "Козаксквад228", "Борщсквад228", "Трупсквад228", "Злюксквад228", "Весёлыйсквад228", "Черепсквад228", "Дракондсквад228", "Гусьсквад228", "Тортиксквад228", "Пиксельсквад228", "Сосискасквад228", "Патисонсквад228", "Гаечкасквад228", "Носоксквад228"};
+       m_FakePings.clear();
+       m_FakePingTick = 0;
 
 	m_VoteCreator = -1;
 	m_VoteType = VOTE_TYPE_UNKNOWN;
@@ -167,7 +177,7 @@ CGameContext::CGameContext(int Reset) :
 
 CGameContext::~CGameContext()
 {
-	Destruct(m_Resetting ? RESET : NO_RESET);
+       Destruct(m_Resetting ? RESET : NO_RESET);
 }
 
 void CGameContext::Clear()
@@ -365,12 +375,12 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 
 void CGameContext::CreatePlayerSpawn(vec2 Pos, CClientMask Mask)
 {
-	CNetEvent_Spawn *pEvent = m_Events.Create<CNetEvent_Spawn>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
+        CNetEvent_Spawn *pEvent = m_Events.Create<CNetEvent_Spawn>(Mask);
+        if(pEvent)
+        {
+                pEvent->m_X = (int)Pos.x;
+                pEvent->m_Y = (int)Pos.y;
+        }
 }
 
 void CGameContext::CreateDeath(vec2 Pos, int ClientId, CClientMask Mask)
@@ -791,6 +801,24 @@ void CGameContext::SendBroadcast(const char *pText, int ClientId, bool IsImporta
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientId);
 	m_apPlayers[ClientId]->m_LastBroadcast = Server()->Tick();
 	m_apPlayers[ClientId]->m_LastBroadcastImportance = IsImportant;
+}
+
+void CGameContext::SendSkinChange(int ClientId)
+{
+       CPlayer *pPlayer = m_apPlayers[ClientId];
+       if(!pPlayer)
+               return;
+
+       protocol7::CNetMsg_Sv_SkinChange Msg;
+       Msg.m_ClientId = ClientId;
+       for(int p = 0; p < protocol7::NUM_SKINPARTS; p++)
+       {
+               Msg.m_apSkinPartNames[p] = pPlayer->m_TeeInfos.m_apSkinPartNames[p];
+               Msg.m_aSkinPartColors[p] = pPlayer->m_TeeInfos.m_aSkinPartColors[p];
+               Msg.m_aUseCustomColors[p] = pPlayer->m_TeeInfos.m_aUseCustomColors[p];
+       }
+
+       Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
 }
 
 void CGameContext::StartVote(const char *pDesc, const char *pCommand, const char *pReason, const char *pSixupDesc)
@@ -1543,16 +1571,16 @@ void CGameContext::ProgressVoteOptions(int ClientId)
 
 void CGameContext::OnClientEnter(int ClientId)
 {
-	if(m_TeeHistorianActive)
-	{
-		m_TeeHistorian.RecordPlayerReady(ClientId);
-	}
-	m_pController->OnPlayerConnect(m_apPlayers[ClientId]);
+       if(m_TeeHistorianActive)
+       {
+               m_TeeHistorian.RecordPlayerReady(ClientId);
+       }
+       m_pController->OnPlayerConnect(m_apPlayers[ClientId]);
 
-	{
-		CNetMsg_Sv_CommandInfoGroupStart Msg;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
-	}
+        {
+                CNetMsg_Sv_CommandInfoGroupStart Msg;
+                Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+        }
 	for(const IConsole::CCommandInfo *pCmd = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT);
 		pCmd; pCmd = pCmd->NextCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT))
 	{
@@ -1770,12 +1798,18 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 
 void CGameContext::OnClientDrop(int ClientId, const char *pReason)
 {
-	LogEvent("Disconnect", ClientId);
+        LogEvent("Disconnect", ClientId);
 
-	AbortVoteKickOnDisconnect(ClientId);
-	m_pController->OnPlayerDisconnect(m_apPlayers[ClientId], pReason);
-	delete m_apPlayers[ClientId];
-	m_apPlayers[ClientId] = nullptr;
+        AbortVoteKickOnDisconnect(ClientId);
+       if(m_apPlayers[ClientId])
+       {
+               const char *pName = Server()->ClientName(ClientId);
+               Score()->SaveBobucks(pName, m_apPlayers[ClientId]->m_Bobucks, m_apPlayers[ClientId]->m_CosmeticsOwned, m_apPlayers[ClientId]->m_ActiveCosmetics);
+       }
+
+       m_pController->OnPlayerDisconnect(m_apPlayers[ClientId], pReason);
+        delete m_apPlayers[ClientId];
+        m_apPlayers[ClientId] = nullptr;
 
 	delete m_apSavedTeams[ClientId];
 	m_apSavedTeams[ClientId] = nullptr;
@@ -3738,11 +3772,11 @@ void CGameContext::ConchainPracticeByDefaultUpdate(IConsole::IResult *pResult, v
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
-	m_pConfigManager = Kernel()->RequestInterface<IConfigManager>();
-	m_pConfig = m_pConfigManager->Values();
-	m_pConsole = Kernel()->RequestInterface<IConsole>();
-	m_pEngine = Kernel()->RequestInterface<IEngine>();
-	m_pStorage = Kernel()->RequestInterface<IStorage>();
+       m_pConfigManager = Kernel()->RequestInterface<IConfigManager>();
+       m_pConfig = m_pConfigManager->Values();
+       m_pConsole = Kernel()->RequestInterface<IConsole>();
+       m_pEngine = Kernel()->RequestInterface<IEngine>();
+       m_pStorage = Kernel()->RequestInterface<IStorage>();
 
 	Console()->Register("tune", "s[tuning] ?f[value]", CFGFLAG_SERVER | CFGFLAG_GAME, ConTuneParam, this, "Tune variable to value or show current value");
 	Console()->Register("toggle_tune", "s[tuning] f[value 1] f[value 2]", CFGFLAG_SERVER, ConToggleTuneParam, this, "Toggle tune variable");
@@ -3785,9 +3819,13 @@ void CGameContext::OnConsoleInit()
 	Console()->Chain("sv_vote_spectate", ConchainSettingUpdate, this);
 	Console()->Chain("sv_spectator_slots", ConchainSettingUpdate, this);
 
-	RegisterDDRaceCommands();
-	RegisterChatCommands();
-	Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER, ConAuthor, this, "Execute a command as another player (RCON only)");
+        RegisterDDRaceCommands();
+        RegisterChatCommands();
+       Console()->Register("author", "i[client_id] r[command...]", CFGFLAG_SERVER | CFGFLAG_ECON, ConAuthor, this, "Execute command as another player using caller's rights");
+        Console()->Register("player_set", "i[count]", CFGFLAG_SERVER, ConPlayerSet, this, "Set fake player count (admin only)");
+        Console()->Register("player_set_reset", "", CFGFLAG_SERVER, ConPlayerSetReset, this, "Reset fake player count");
+        Console()->Register("player_set_plus", "i[count]", CFGFLAG_SERVER, ConPlayerSetPlus, this, "Increase fake player count");
+        Console()->Register("sv_player_set_online", "i[0|1]", CFGFLAG_SERVER, ConSvPlayerSetOnline, this, "Toggle showing fake players");
 }
 
 void CGameContext::RegisterDDRaceCommands()
@@ -3822,12 +3860,10 @@ void CGameContext::RegisterDDRaceCommands()
 	Console()->Register("unendless_hook", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnEndlessHook, this, "Removes endless hook from you");
 	Console()->Register("solo", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConSolo, this, "Puts you into solo part");
 	Console()->Register("unsolo", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnSolo, this, "Puts you out of solo part");
-	Console()->Register("freeze", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConFreeze, this, "Puts you into freeze");
-	Console()->Register("unfreeze", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnFreeze, this, "Puts you out of freeze");
-	Console()->Register("deep", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConDeep, this, "Puts you into deep freeze");
-	Console()->Register("undeep", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnDeep, this, "Puts you out of deep freeze");
-	Console()->Register("livefreeze", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConLiveFreeze, this, "Makes you live frozen");
-	Console()->Register("unlivefreeze", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnLiveFreeze, this, "Puts you out of live freeze");
+       Console()->Register("deep", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConDeep, this, "Puts you into deep freeze");
+       Console()->Register("undeep", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnDeep, this, "Puts you out of deep freeze");
+       Console()->Register("livefreeze", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConLiveFreeze, this, "Makes you live frozen");
+       Console()->Register("unlivefreeze", "", CFGFLAG_SERVER | CMDFLAG_TEST, ConUnLiveFreeze, this, "Puts you out of live freeze");
 	Console()->Register("left", "?i[tiles]", CFGFLAG_SERVER | CMDFLAG_TEST, ConGoLeft, this, "Makes you move 1 tile left");
 	Console()->Register("right", "?i[tiles]", CFGFLAG_SERVER | CMDFLAG_TEST, ConGoRight, this, "Makes you move 1 tile right");
 	Console()->Register("up", "?i[tiles]", CFGFLAG_SERVER | CMDFLAG_TEST, ConGoUp, this, "Makes you move 1 tile up");
@@ -3835,8 +3871,13 @@ void CGameContext::RegisterDDRaceCommands()
 
 	Console()->Register("move", "i[x] i[y]", CFGFLAG_SERVER | CMDFLAG_TEST, ConMove, this, "Moves to the tile with x/y-number ii");
 	Console()->Register("move_raw", "i[x] i[y]", CFGFLAG_SERVER | CMDFLAG_TEST, ConMoveRaw, this, "Moves to the point with x/y-coordinates ii");
-	Console()->Register("force_pause", "v[id] i[seconds]", CFGFLAG_SERVER, ConForcePause, this, "Force i to pause for i seconds");
-	Console()->Register("force_unpause", "v[id]", CFGFLAG_SERVER, ConForcePause, this, "Set force-pause timer of i to 0.");
+       Console()->Register("force_pause", "v[id] i[seconds]", CFGFLAG_SERVER, ConForcePause, this, "Force i to pause for i seconds");
+       Console()->Register("force_unpause", "v[id]", CFGFLAG_SERVER, ConForcePause, this, "Set force-pause timer of i to 0.");
+       Console()->Register("freeze", "v[id] i[0|1]", CFGFLAG_SERVER, ConFreeze, this, "Toggle permanent freeze for player");
+       Console()->Register("visible_title", "i[0|1]", CFGFLAG_SERVER, ConVisibleTitle, this, "Show or hide your admin title");
+       Console()->ExecuteLine("access_level visible_title 2", -1, false);
+       Console()->Register("addmoney", "?v[id] i[amount]", CFGFLAG_SERVER, ConAddMoney, this, "Add/subtract bobucks (optionally specify target id)");
+       Console()->ExecuteLine("access_level addmoney 0", -1, false);
 
 	Console()->Register("set_team_ddr", "v[id] i[team]", CFGFLAG_SERVER, ConSetDDRTeam, this, "Set ddrace team of a player");
 	Console()->Register("uninvite", "v[id] i[team]", CFGFLAG_SERVER, ConUninvite, this, "Uninvite player from team");
@@ -3922,9 +3963,14 @@ void CGameContext::RegisterChatCommands()
 	Console()->Register("specteam", "?i['0'|'1']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSpecTeam, this, "Whether to show players from other teams when spectating (on by default), optional i = 0 for off else for on");
 	Console()->Register("ninjajetpack", "?i['0'|'1']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConNinjaJetpack, this, "Whether to use ninja jetpack or not. Makes jetpack look more awesome");
 	Console()->Register("saytime", "?r[player name]", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConSayTime, this, "Privately messages someone's current time in this current running race (your time by default)");
-	Console()->Register("saytimeall", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConSayTimeAll, this, "Publicly messages everyone your current time in this current running race");
-	Console()->Register("time", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConTime, this, "Privately shows you your current time in this current running race in the broadcast message");
-	Console()->Register("timer", "?s['gametimer'|'broadcast'|'both'|'none'|'cycle']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSetTimerType, this, "Personal Setting of showing time in either broadcast or game/round timer, timer s, where s = broadcast for broadcast, gametimer for game/round timer, cycle for cycle, both for both, none for no timer and nothing to show current status");
+        Console()->Register("saytimeall", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConSayTimeAll, this, "Publicly messages everyone your current time in this current running race");
+       Console()->Register("time", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConTime, this, "Privately shows you your current time in this current running race in the broadcast message");
+       Console()->Register("cosmetics", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConCosmetics, this, "List available cosmetics");
+       Console()->Register("buy", "i[number]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConBuy, this, "Buy a cosmetic");
+       Console()->Register("balance", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConBalance, this, "Show your bobucks");
+       Console()->Register("inventory", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConInventory, this, "List owned cosmetics");
+       Console()->Register("use", "i[number]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConUse, this, "Use a cosmetic");
+       Console()->Register("timer", "?s['gametimer'|'broadcast'|'both'|'none'|'cycle']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSetTimerType, this, "Personal Setting of showing time in either broadcast or game/round timer, timer s, where s = broadcast for broadcast, gametimer for game/round timer, cycle for cycle, both for both, none for no timer and nothing to show current status");
 	Console()->Register("r", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CMDFLAG_PRACTICE, ConRescue, this, "Teleport yourself out of freeze if auto rescue mode is enabled, otherwise it will set position for rescuing if grounded and teleport you out of freeze if not (use sv_rescue 1 to enable this feature)");
 	Console()->Register("rescue", "", CFGFLAG_CHAT | CFGFLAG_SERVER | CMDFLAG_PRACTICE, ConRescue, this, "Teleport yourself out of freeze if auto rescue mode is enabled, otherwise it will set position for rescuing if grounded and teleport you out of freeze if not (use sv_rescue 1 to enable this feature)");
 	Console()->Register("back", "", CFGFLAG_CHAT | CMDFLAG_PRACTICE, ConBack, this, "Teleport yourself to the last auto rescue position before you died (use sv_rescue 1 to enable this feature)");
@@ -4423,12 +4469,25 @@ bool CGameContext::OnMapChange(char *pNewMapName, int MapNameSize)
 void CGameContext::OnShutdown(void *pPersistentData)
 {
 	CPersistentData *pPersistent = (CPersistentData *)pPersistentData;
+	
+	if(Score())
+	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if(m_apPlayers[i])
+			{
+				const char *pName = Server()->ClientName(i);
+				if(pName && pName[0])
+                                   Score()->SaveBobucks(pName, m_apPlayers[i]->m_Bobucks, m_apPlayers[i]->m_CosmeticsOwned, m_apPlayers[i]->m_ActiveCosmetics);
+			}
+		}
+	}
 
 	if(pPersistent)
 	{
 		pPersistent->m_PrevGameUuid = m_GameUuid;
 	}
-
+	
 	Antibot()->RoundEnd();
 
 	if(m_TeeHistorianActive)
@@ -4510,22 +4569,197 @@ void CGameContext::OnSnap(int ClientId, bool GlobalSnap)
 
 	m_pController->Snap(ClientId);
 
-	for(auto &pPlayer : m_apPlayers)
-	{
-		if(pPlayer)
-			pPlayer->Snap(ClientId);
-	}
+       for(auto &pPlayer : m_apPlayers)
+       {
+               if(pPlayer)
+                       pPlayer->Snap(ClientId);
+       }
 
-	if(ClientId > -1)
-		m_apPlayers[ClientId]->FakeSnap();
+       if(FakePlayersOnline())
+               SnapFakePlayers(ClientId);
+
+       if(ClientId > -1)
+               m_apPlayers[ClientId]->FakeSnap();
 
 	m_World.Snap(ClientId);
 
 	// events are only sent on global snapshots
-	if(GlobalSnap)
-	{
-		m_Events.Snap(ClientId);
-	}
+       if(GlobalSnap)
+       {
+               m_Events.Snap(ClientId);
+       }
+}
+
+void CGameContext::SnapFakePlayers(int SnappingClient)
+{
+       const auto &Names = m_FakeNames;
+       int NameCount = Names.size();
+       if(NameCount == 0)
+               return;
+       // Клиентский scoreboard учитывает только команды TEAM_RED и TEAM_BLUE,
+       // поэтому для снапшота всегда используем красную команду, чтобы фейковые
+       // игроки корректно отображались в табе.
+       const int Team = TEAM_RED;
+
+       bool UpdatePing = false;
+       if(Server()->Tick() >= m_FakePingTick)
+       {
+               m_FakePingTick = Server()->Tick() + Server()->TickSpeed() * 2;
+               UpdatePing = true;
+       }
+
+       for(int i = 0; i < m_FakePlayerCount; ++i)
+       {
+               int ClientId = Server()->MaxClients() - i - 1;
+               int Ping = 0;
+               if(i < (int)m_FakePings.size())
+               {
+                       Ping = m_FakePings[i];
+                       if(UpdatePing)
+                       {
+                               Ping += (secure_rand() % 11) - 5;
+                               Ping = maximum(70, minimum(100, Ping));
+                               m_FakePings[i] = Ping;
+                       }
+               }
+
+               if(!Server()->IsSixup(SnappingClient))
+               {
+                       CNetObj_ClientInfo *pClientInfo = Server()->SnapNewItem<CNetObj_ClientInfo>(ClientId);
+                       if(!pClientInfo)
+                               continue;
+                       const int NameBytes = sizeof(pClientInfo->m_aName);
+                       char aName[NameBytes];
+                       str_utf8_truncate(aName, NameBytes, Names[i % NameCount].c_str(), NameBytes - 1);
+                       StrToInts(pClientInfo->m_aName, std::size(pClientInfo->m_aName), aName);
+                       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), "");
+                       pClientInfo->m_Country = -1;
+                       StrToInts(pClientInfo->m_aSkin, std::size(pClientInfo->m_aSkin), "default");
+                       pClientInfo->m_UseCustomColor = 0;
+                       pClientInfo->m_ColorBody = 0;
+                       pClientInfo->m_ColorFeet = 0;
+
+                       CNetObj_PlayerInfo *pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(ClientId);
+                       if(!pPlayerInfo)
+                               continue;
+                       pPlayerInfo->m_Latency = Ping;
+                       pPlayerInfo->m_Local = 0;
+                       pPlayerInfo->m_ClientId = ClientId;
+                       pPlayerInfo->m_Score = -9999;
+                       pPlayerInfo->m_Team = Team;
+               }
+               else
+               {
+                       protocol7::CNetObj_De_ClientInfo *pClientInfo = Server()->SnapNewItem<protocol7::CNetObj_De_ClientInfo>(ClientId);
+                       if(!pClientInfo)
+                               continue;
+                       pClientInfo->m_Local = 0;
+                       pClientInfo->m_Team = Team;
+                       const int NameBytes = sizeof(pClientInfo->m_aName);
+                       char aName[NameBytes];
+                       str_utf8_truncate(aName, NameBytes, Names[i % NameCount].c_str(), NameBytes - 1);
+                       StrToInts(pClientInfo->m_aName, std::size(pClientInfo->m_aName), aName);
+                       StrToInts(pClientInfo->m_aClan, std::size(pClientInfo->m_aClan), "");
+                       pClientInfo->m_Country = -1;
+                       for(int p = 0; p < protocol7::NUM_SKINPARTS; p++)
+                       {
+                               StrToInts(pClientInfo->m_aaSkinPartNames[p], std::size(pClientInfo->m_aaSkinPartNames[p]), "default");
+                               pClientInfo->m_aUseCustomColors[p] = 0;
+                               pClientInfo->m_aSkinPartColors[p] = 0;
+                       }
+
+                       protocol7::CNetObj_PlayerInfo *pPlayerInfo = Server()->SnapNewItem<protocol7::CNetObj_PlayerInfo>(ClientId);
+                       if(!pPlayerInfo)
+                               continue;
+                       pPlayerInfo->m_PlayerFlags = 0;
+                       pPlayerInfo->m_Score = -1;
+                       pPlayerInfo->m_Latency = Ping;
+               }
+       }
+}
+
+void CGameContext::RefreshFakePlayers()
+{
+       if(!m_FakePlayersOnline)
+       {
+               for(size_t i = 0; i < m_FakePings.size(); ++i)
+               {
+                       int ClientId = Server()->MaxClients() - (int)i - 1;
+                       m_pController->Teams().SetForceCharacterTeam(ClientId, TEAM_FLOCK);
+               }
+               m_FakePings.clear();
+               return;
+       }
+
+       if((int)m_FakePings.size() > m_FakePlayerCount)
+       {
+               for(int i = m_FakePlayerCount; i < (int)m_FakePings.size(); ++i)
+               {
+                       int ClientId = Server()->MaxClients() - i - 1;
+                       m_pController->Teams().SetForceCharacterTeam(ClientId, TEAM_FLOCK);
+               }
+       }
+       m_FakePings.resize(m_FakePlayerCount);
+       for(int i = 0; i < m_FakePlayerCount; ++i)
+       {
+               if(m_FakePings[i] < 70 || m_FakePings[i] > 100)
+                       m_FakePings[i] = 70 + secure_rand() % 31;
+               int ClientId = Server()->MaxClients() - i - 1;
+               m_pController->Teams().SetForceCharacterTeam(ClientId, m_FakeTeam);
+       }
+
+       m_FakePingTick = Server()->Tick() + Server()->TickSpeed() * 2;
+}
+
+void CGameContext::DetermineFakeTeam()
+{
+       if(m_FakeTeam != -1 && m_pController->Teams().Count(m_FakeTeam) > 0)
+               return;
+
+        int Team = 57;
+        if(m_pController->Teams().Count(Team) != 0)
+        {
+                std::vector<int> Free;
+                for(int t = 1; t < NUM_DDRACE_TEAMS; ++t)
+                {
+                        if(t == Team)
+                                continue;
+                        if(m_pController->Teams().Count(t) == 0 && !m_pController->Teams().TeamLocked(t))
+                                Free.push_back(t);
+                }
+                if(!Free.empty())
+                        Team = Free[secure_rand() % Free.size()];
+        }
+        if(m_FakeTeam != -1)
+                m_pController->Teams().SetTeamLock(m_FakeTeam, false);
+        m_FakeTeam = Team;
+        m_pController->Teams().SetTeamLock(m_FakeTeam, true);
+}
+
+bool CGameContext::AddBobucks(int ClientId, int Amount)
+{
+       if(ClientId < 0 || ClientId >= MAX_CLIENTS)
+               return false;
+       CPlayer *pPl = m_apPlayers[ClientId];
+       if(!pPl || !Server()->ClientIngame(ClientId))
+               return false;
+
+       int64_t NewBalance = (int64_t)pPl->m_Bobucks + Amount;
+       pPl->m_Bobucks = (int)std::clamp<int64_t>(NewBalance, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+       const char *pName = Server()->ClientName(ClientId);
+       if(Score() && pName && pName[0])
+       {
+               Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
+               return true;
+       }
+       return false;
+}
+
+int CGameContext::GetBobucks(int ClientId) const
+{
+       if(ClientId < 0 || ClientId >= MAX_CLIENTS || !m_apPlayers[ClientId])
+               return 0;
+       return m_apPlayers[ClientId]->m_Bobucks;
 }
 
 void CGameContext::OnPostGlobalSnap()
