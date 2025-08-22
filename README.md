@@ -140,7 +140,7 @@ FLUSH PRIVILEGES;
 	Whether to enable the autoupdater. Packagers may want to disable this for their packages. Default value is ON for Windows and Linux.
 
 * **-DCLIENT=[ON|OFF]** <br>
-	Whether to enable client compilation. If set to OFF, DDNet will not depend on Curl, Freetype, Ogg, Opus, Opusfile, and SDL2. Default value is ON.
+        Whether to enable client compilation. If set to OFF, DDNet will not depend on Curl, Freetype, Ogg, Opus, Opusfile, and SDL2. Default value is OFF.
 
 * **-DVIDEORECORDER=[ON|OFF]** <br>
 	Whether to add video recording support using FFmpeg to the client. Default value is ON.

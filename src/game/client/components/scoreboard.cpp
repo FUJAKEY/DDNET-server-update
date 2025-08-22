@@ -19,6 +19,11 @@
 #include <game/generated/client_data7.h>
 #include <game/localization.h>
 
+static bool IsRoleTitle(const char *pClan)
+{
+       return str_comp(pClan, "^xFF0000Admin") == 0 || str_comp(pClan, "^x0000FFMod") == 0 || str_comp(pClan, "^x00FF00Helper") == 0;
+}
+
 CScoreboard::CScoreboard()
 {
 	OnReset();
@@ -210,25 +215,25 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 			TextRender()->TextEx(&Cursor, aClientId);
 		}
 
-		{
-			const char *pClanName = GameClient()->m_aClients[pInfo->m_ClientId].m_aClan;
-			if(pClanName[0] != '\0')
-			{
-				if(GameClient()->m_aLocalIds[g_Config.m_ClDummy] >= 0 && str_comp(pClanName, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
-				{
-					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
-				}
-				else
-				{
-					TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f));
-				}
+               {
+                       const char *pClanName = GameClient()->m_aClients[pInfo->m_ClientId].m_aClan;
+                       if(pClanName[0] != '\0' && !IsRoleTitle(pClanName))
+                       {
+                               if(GameClient()->m_aLocalIds[g_Config.m_ClDummy] >= 0 && str_comp(pClanName, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
+                               {
+                                       TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
+                               }
+                               else
+                               {
+                                       TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f));
+                               }
 
-				TextRender()->TextEx(&Cursor, pClanName);
-				TextRender()->TextEx(&Cursor, " ");
+                               TextRender()->TextEx(&Cursor, pClanName);
+                               TextRender()->TextEx(&Cursor, " ");
 
-				TextRender()->TextColor(TextRender()->DefaultTextColor());
-			}
-		}
+                               TextRender()->TextColor(TextRender()->DefaultTextColor());
+                       }
+               }
 
 		if(GameClient()->m_aClients[pInfo->m_ClientId].m_AuthLevel)
 		{
@@ -559,22 +564,25 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			}
 
 			// clan
-			{
-				if(GameClient()->m_aLocalIds[g_Config.m_ClDummy] >= 0 && str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
-				{
-					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
-				}
-				else
-				{
-					TextRender()->TextColor(TextColor);
-				}
-				CTextCursor Cursor;
-				Cursor.SetPosition(vec2(ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f));
-				Cursor.m_FontSize = FontSize;
-				Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
-				Cursor.m_LineWidth = ClanLength;
-				TextRender()->TextEx(&Cursor, ClientData.m_aClan);
-			}
+                       {
+                               if(!IsRoleTitle(ClientData.m_aClan))
+                               {
+                                       if(GameClient()->m_aLocalIds[g_Config.m_ClDummy] >= 0 && str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
+                                       {
+                                               TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
+                                       }
+                                       else
+                                       {
+                                               TextRender()->TextColor(TextColor);
+                                       }
+                                       CTextCursor Cursor;
+                                       Cursor.SetPosition(vec2(ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f));
+                                       Cursor.m_FontSize = FontSize;
+                                       Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
+                                       Cursor.m_LineWidth = ClanLength;
+                                       TextRender()->TextEx(&Cursor, ClientData.m_aClan);
+                               }
+                       }
 
 			// country flag
 			GameClient()->m_CountryFlags.Render(ClientData.m_Country, ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f),
@@ -844,8 +852,8 @@ const char *CScoreboard::GetTeamName(int Team) const
 		}
 	}
 
-	if(ClanPlayers > 1 && pClanName[0] != '\0')
-		return pClanName;
-	else
-		return nullptr;
+       if(ClanPlayers > 1 && pClanName[0] != '\0' && !IsRoleTitle(pClanName))
+               return pClanName;
+       else
+               return nullptr;
 }

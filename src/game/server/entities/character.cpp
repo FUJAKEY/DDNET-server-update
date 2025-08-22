@@ -2315,6 +2315,9 @@ bool CCharacter::Freeze()
 
 bool CCharacter::UnFreeze()
 {
+	if(m_pPlayer && m_pPlayer->m_FreezeCommand)
+		return false;
+
 	if(m_FreezeTime > 0)
 	{
 		m_Armor = 10;

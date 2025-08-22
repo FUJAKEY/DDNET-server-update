@@ -37,28 +37,35 @@ struct CScorePlayerResult : ISqlResult
 		DIRECT,
 		ALL,
 		BROADCAST,
-		MAP_VOTE,
-		PLAYER_INFO,
-		PLAYER_TIMECP,
-	} m_MessageKind;
-	union
-	{
-		char m_aaMessages[MAX_MESSAGES][512];
-		char m_aBroadcast[1024];
-		struct
-		{
-			std::optional<float> m_Time;
-			float m_aTimeCp[NUM_CHECKPOINTS];
-			int m_Birthday; // 0 indicates no birthday
-			char m_aRequestedPlayer[MAX_NAME_LENGTH];
-		} m_Info = {};
-		struct
-		{
-			char m_aReason[VOTE_REASON_LENGTH];
-			char m_aServer[32 + 1];
-			char m_aMap[MAX_MAP_LENGTH + 1];
-		} m_MapVote;
-	} m_Data = {}; // PLAYER_INFO
+               MAP_VOTE,
+               PLAYER_INFO,
+               PLAYER_TIMECP,
+               BOBUCKS,
+       } m_MessageKind;
+       union
+       {
+               char m_aaMessages[MAX_MESSAGES][512];
+               char m_aBroadcast[1024];
+               struct
+               {
+                       std::optional<float> m_Time;
+                       float m_aTimeCp[NUM_CHECKPOINTS];
+                       int m_Birthday; // 0 indicates no birthday
+                       char m_aRequestedPlayer[MAX_NAME_LENGTH];
+               } m_Info = {};
+               struct
+               {
+                       char m_aReason[VOTE_REASON_LENGTH];
+                       char m_aServer[32 + 1];
+                       char m_aMap[MAX_MAP_LENGTH + 1];
+               } m_MapVote;
+               struct
+               {
+                       int m_Bobucks;
+                       int m_Cosmetics;
+                       int m_ActiveCosmetic;
+               } m_BobucksInfo;
+       } m_Data = {}; // PLAYER_INFO
 
 	void SetVariant(Variant v);
 };
@@ -144,6 +151,27 @@ struct CSqlScoreData : ISqlData
 	int m_Num;
 	bool m_Search;
 	char m_aRequestingPlayer[MAX_NAME_LENGTH];
+};
+
+struct CSqlBobucksSave : ISqlData
+{
+       CSqlBobucksSave() : ISqlData(nullptr)
+       {
+       }
+
+       char m_aName[MAX_NAME_LENGTH];
+       int m_Bobucks;
+       int m_Cosmetics;
+       int m_ActiveCosmetic;
+};
+
+struct CSqlBobucksRequest : ISqlData
+{
+       CSqlBobucksRequest(std::shared_ptr<CScorePlayerResult> pResult) : ISqlData(std::move(pResult))
+       {
+       }
+
+       char m_aName[MAX_NAME_LENGTH];
 };
 
 struct CScoreSaveResult : ISqlResult
@@ -304,7 +332,10 @@ struct CScoreWorker
 	static bool LoadTeam(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize);
 
 	static bool SaveScore(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize);
-	static bool SaveTeamScore(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize);
+        static bool SaveTeamScore(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize);
+
+       static bool SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, Write w, char *pError, int ErrorSize);
+       static bool LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize);
 };
 
 #endif // GAME_SERVER_SCOREWORKER_H

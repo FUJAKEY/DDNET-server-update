@@ -139,9 +139,9 @@ private:
 	int m_Paused;
 	int64_t m_ForcePauseTime;
 	int64_t m_LastPause;
-	bool m_Afk;
+       bool m_Afk;
 
-	int m_DefEmote;
+       int m_DefEmote;
 	int m_OverrideEmote;
 	int m_OverrideEmoteReset;
 	bool m_Halloween;
@@ -182,9 +182,11 @@ public:
 	bool m_ShowAll;
 	vec2 m_ShowDistance;
 	bool m_SpecTeam;
-	bool m_NinjaJetpack;
+       bool m_NinjaJetpack;
+       bool m_TitleVisible;
+       bool m_FreezeCommand;
 
-	// camera info is used sparingly for converting aim target to absolute world coordinates
+       // camera info is used sparingly for converting aim target to absolute world coordinates
 	class CCameraInfo
 	{
 		friend class CPlayer;
@@ -197,17 +199,25 @@ public:
 		vec2 ConvertTargetToWorld(vec2 Position, vec2 Target) const;
 		void Write(const CNetMsg_Cl_CameraInfo *pMsg);
 		void Reset();
-	} m_CameraInfo;
+       } m_CameraInfo;
 
-	int m_ChatScore;
+       int m_ChatScore;
+       int m_Bobucks;
+       int m_CosmeticsOwned;
+       int m_ActiveCosmetic;
+       float m_RainbowHue;
+       int m_OriginalUseCustomColor;
+       int m_OriginalColorBody;
+       int m_OriginalColorFeet;
+       bool m_RainbowColorsSaved;
 
-	bool m_Moderating;
+       bool m_Moderating;
 
 	void UpdatePlaytime();
-	void AfkTimer();
-	void SetAfk(bool Afk);
-	void SetInitialAfk(bool Afk);
-	bool IsAfk() const { return m_Afk; }
+       void AfkTimer();
+       void SetAfk(bool Afk);
+       void SetInitialAfk(bool Afk);
+       bool IsAfk() const { return m_Afk; }
 
 	int64_t m_LastPlaytime;
 	int64_t m_LastEyeEmote;
@@ -226,12 +236,15 @@ public:
 
 	bool m_FirstPacket;
 	int64_t m_LastSqlQuery;
-	void ProcessScoreResult(CScorePlayerResult &Result);
-	std::shared_ptr<CScorePlayerResult> m_ScoreQueryResult;
-	std::shared_ptr<CScorePlayerResult> m_ScoreFinishResult;
-	bool m_NotEligibleForFinish;
-	int64_t m_EligibleForFinishCheck;
-	bool m_VotedForPractice;
+       void ProcessScoreResult(CScorePlayerResult &Result);
+       std::shared_ptr<CScorePlayerResult> m_ScoreQueryResult;
+       std::shared_ptr<CScorePlayerResult> m_ScoreFinishResult;
+       bool m_NotEligibleForFinish;
+       int64_t m_EligibleForFinishCheck;
+       bool m_VotedForPractice;
+
+       void SaveSkin();
+       void RestoreSkin();
 	int m_SwapTargetsClientId; //Client ID of the swap target for the given player
 	bool m_BirthdayAnnounced;
 
