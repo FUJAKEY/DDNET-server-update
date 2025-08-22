@@ -25,7 +25,7 @@ MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS)
 
 // Character, "physical" player's part
 CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
-	CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), CCharacterCore::PhysicalSize())
+        CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), CCharacterCore::PhysicalSize())
 {
 	m_Health = 0;
 	m_Armor = 0;
@@ -40,11 +40,12 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 	m_LatestPrevPrevInput = m_LatestPrevInput = m_LatestInput = m_PrevInput = m_SavedInput = m_Input;
 
 	m_LastTimeCp = -1;
-	m_LastTimeCpBroadcasted = -1;
+        m_LastTimeCpBroadcasted = -1;
 	for(float &CurrentTimeCp : m_aCurrentTimeCp)
 	{
 		CurrentTimeCp = 0.0f;
-	}
+        }
+
 }
 
 void CCharacter::Reset()
@@ -206,7 +207,7 @@ void CCharacter::SetInvincible(bool Invincible)
 
 void CCharacter::SetLiveFrozen(bool Active)
 {
-	m_Core.m_LiveFrozen = Active;
+        m_Core.m_LiveFrozen = Active;
 }
 
 void CCharacter::SetDeepFrozen(bool Active)
@@ -741,8 +742,8 @@ void CCharacter::ResetInput()
 
 void CCharacter::PreTick()
 {
-	if(m_StartTime > Server()->Tick())
-	{
+      if(m_StartTime > Server()->Tick())
+      {
 		// Prevent the player from getting a negative time
 		// The main reason why this can happen is because of time penalty tiles
 		// However, other reasons are hereby also excluded
@@ -2315,6 +2316,9 @@ bool CCharacter::Freeze()
 
 bool CCharacter::UnFreeze()
 {
+	if(m_pPlayer && m_pPlayer->m_FreezeCommand)
+		return false;
+
 	if(m_FreezeTime > 0)
 	{
 		m_Armor = 10;

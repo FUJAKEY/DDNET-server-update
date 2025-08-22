@@ -1354,16 +1354,16 @@ void CGameClient::ProcessEvents()
 		// We don't have enough info about us, others, to know a correct alpha value.
 		float Alpha = 1.0f;
 
-		if(Item.m_Type == NETEVENTTYPE_DAMAGEIND)
-		{
-			const CNetEvent_DamageInd *pEvent = (const CNetEvent_DamageInd *)Item.m_pData;
-			m_Effects.DamageIndicator(vec2(pEvent->m_X, pEvent->m_Y), direction(pEvent->m_Angle / 256.0f), Alpha);
-		}
-		else if(Item.m_Type == NETEVENTTYPE_EXPLOSION)
-		{
-			const CNetEvent_Explosion *pEvent = (const CNetEvent_Explosion *)Item.m_pData;
-			m_Effects.Explosion(vec2(pEvent->m_X, pEvent->m_Y), Alpha);
-		}
+               if(Item.m_Type == NETEVENTTYPE_DAMAGEIND)
+               {
+                       const CNetEvent_DamageInd *pEvent = (const CNetEvent_DamageInd *)Item.m_pData;
+                       m_Effects.DamageIndicator(vec2(pEvent->m_X, pEvent->m_Y), direction(pEvent->m_Angle / 256.0f), Alpha);
+               }
+               else if(Item.m_Type == NETEVENTTYPE_EXPLOSION)
+               {
+                       const CNetEvent_Explosion *pEvent = (const CNetEvent_Explosion *)Item.m_pData;
+                       m_Effects.Explosion(vec2(pEvent->m_X, pEvent->m_Y), Alpha);
+               }
 		else if(Item.m_Type == NETEVENTTYPE_HAMMERHIT)
 		{
 			const CNetEvent_HammerHit *pEvent = (const CNetEvent_HammerHit *)Item.m_pData;
@@ -1384,15 +1384,20 @@ void CGameClient::ProcessEvents()
 			const CNetEvent_Spawn *pEvent = (const CNetEvent_Spawn *)Item.m_pData;
 			m_Effects.PlayerSpawn(vec2(pEvent->m_X, pEvent->m_Y), Alpha);
 		}
-		else if(Item.m_Type == NETEVENTTYPE_DEATH)
-		{
-			const CNetEvent_Death *pEvent = (const CNetEvent_Death *)Item.m_pData;
-			m_Effects.PlayerDeath(vec2(pEvent->m_X, pEvent->m_Y), pEvent->m_ClientId, Alpha);
-		}
-		else if(Item.m_Type == NETEVENTTYPE_SOUNDWORLD)
-		{
-			const CNetEvent_SoundWorld *pEvent = (const CNetEvent_SoundWorld *)Item.m_pData;
-			if(!Config()->m_SndGame)
+               else if(Item.m_Type == NETEVENTTYPE_DEATH)
+               {
+                       const CNetEvent_Death *pEvent = (const CNetEvent_Death *)Item.m_pData;
+                       m_Effects.PlayerDeath(vec2(pEvent->m_X, pEvent->m_Y), pEvent->m_ClientId, Alpha);
+               }
+               else if(Item.m_Type == NETEVENTTYPE_FREEZEEFFECT)
+               {
+                       const CNetEvent_FreezeEffect *pEvent = (const CNetEvent_FreezeEffect *)Item.m_pData;
+                       m_Effects.FreezingFlakes(vec2(pEvent->m_X, pEvent->m_Y), vec2(32, 32), Alpha);
+               }
+               else if(Item.m_Type == NETEVENTTYPE_SOUNDWORLD)
+               {
+                       const CNetEvent_SoundWorld *pEvent = (const CNetEvent_SoundWorld *)Item.m_pData;
+                       if(!Config()->m_SndGame)
 				continue;
 
 			if(m_GameInfo.m_RaceSounds && ((pEvent->m_SoundId == SOUND_GUN_FIRE && !g_Config.m_SndGun) || (pEvent->m_SoundId == SOUND_PLAYER_PAIN_LONG && !g_Config.m_SndLongPain)))
