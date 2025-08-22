@@ -375,12 +375,18 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamag
 
 void CGameContext::CreatePlayerSpawn(vec2 Pos, CClientMask Mask)
 {
-	CNetEvent_Spawn *pEvent = m_Events.Create<CNetEvent_Spawn>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
+        CNetEvent_Spawn *pEvent = m_Events.Create<CNetEvent_Spawn>(Mask);
+        if(pEvent)
+        {
+                pEvent->m_X = (int)Pos.x;
+                pEvent->m_Y = (int)Pos.y;
+        }
+}
+
+void CGameContext::CreateResurrection(vec2 Pos, CClientMask Mask)
+{
+        // use damage indicators to mimic spawn particles without triggering sound
+        CreateDamageInd(Pos, 0, 32, Mask);
 }
 
 void CGameContext::CreateDeath(vec2 Pos, int ClientId, CClientMask Mask)
@@ -1804,7 +1810,7 @@ void CGameContext::OnClientDrop(int ClientId, const char *pReason)
        if(m_apPlayers[ClientId])
        {
                const char *pName = Server()->ClientName(ClientId);
-               Score()->SaveBobucks(pName, m_apPlayers[ClientId]->m_Bobucks, m_apPlayers[ClientId]->m_CosmeticsOwned, m_apPlayers[ClientId]->m_ActiveCosmetic);
+               Score()->SaveBobucks(pName, m_apPlayers[ClientId]->m_Bobucks, m_apPlayers[ClientId]->m_CosmeticsOwned, m_apPlayers[ClientId]->m_ActiveCosmetics);
        }
 
        m_pController->OnPlayerDisconnect(m_apPlayers[ClientId], pReason);
@@ -4478,7 +4484,7 @@ void CGameContext::OnShutdown(void *pPersistentData)
 			{
 				const char *pName = Server()->ClientName(i);
 				if(pName && pName[0])
-					Score()->SaveBobucks(pName, m_apPlayers[i]->m_Bobucks, m_apPlayers[i]->m_CosmeticsOwned, m_apPlayers[i]->m_ActiveCosmetic);
+                                   Score()->SaveBobucks(pName, m_apPlayers[i]->m_Bobucks, m_apPlayers[i]->m_CosmeticsOwned, m_apPlayers[i]->m_ActiveCosmetics);
 			}
 		}
 	}
@@ -4749,7 +4755,7 @@ bool CGameContext::AddBobucks(int ClientId, int Amount)
        const char *pName = Server()->ClientName(ClientId);
        if(Score() && pName && pName[0])
        {
-               Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                return true;
        }
        return false;

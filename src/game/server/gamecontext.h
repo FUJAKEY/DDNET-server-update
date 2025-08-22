@@ -280,9 +280,10 @@ public:
 	// helper functions
 	void CreateDamageInd(vec2 Pos, float AngleMod, int Amount, CClientMask Mask = CClientMask().set());
 	void CreateExplosion(vec2 Pos, int Owner, int Weapon, bool NoDamage, int ActivatedTeam, CClientMask Mask = CClientMask().set());
-	void CreateHammerHit(vec2 Pos, CClientMask Mask = CClientMask().set());
-	void CreatePlayerSpawn(vec2 Pos, CClientMask Mask = CClientMask().set());
-	void CreateDeath(vec2 Pos, int ClientId, CClientMask Mask = CClientMask().set());
+        void CreateHammerHit(vec2 Pos, CClientMask Mask = CClientMask().set());
+        void CreatePlayerSpawn(vec2 Pos, CClientMask Mask = CClientMask().set());
+        void CreateResurrection(vec2 Pos, CClientMask Mask = CClientMask().set());
+        void CreateDeath(vec2 Pos, int ClientId, CClientMask Mask = CClientMask().set());
 	void CreateBirthdayEffect(vec2 Pos, CClientMask Mask = CClientMask().set());
 	void CreateFinishEffect(vec2 Pos, CClientMask Mask = CClientMask().set());
 	void CreateSound(vec2 Pos, int Sound, CClientMask Mask = CClientMask().set());

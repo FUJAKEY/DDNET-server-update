@@ -204,7 +204,7 @@ public:
        int m_ChatScore;
        int m_Bobucks;
        int m_CosmeticsOwned;
-       int m_ActiveCosmetic;
+       int m_ActiveCosmetics;
        float m_RainbowHue;
        int m_OriginalUseCustomColor;
        int m_OriginalColorBody;

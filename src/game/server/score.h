@@ -72,7 +72,7 @@ public:
         void LoadTeam(const char *pCode, int ClientId);
         void GetSaves(int ClientId);
 
-       void SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int Active);
+       void SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int ActiveMask);
        void LoadBobucks(int ClientId, const char *pName);
 };
 

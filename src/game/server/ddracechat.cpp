@@ -1,5 +1,6 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
 #include <base/log.h>
+#include <base/system.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <game/mapitems.h>
@@ -83,7 +84,7 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
                }
                pPl->m_Bobucks -= Cost;
                pPl->m_CosmeticsOwned |= 1;
-               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                char aBuf[128];
                str_format(aBuf, sizeof(aBuf), "Purchased Resurrection particles. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
                pSelf->SendChatTarget(ClientId, aBuf);
@@ -103,7 +104,7 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
                }
                pPl->m_Bobucks -= Cost;
                pPl->m_CosmeticsOwned |= 2;
-               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                char aBuf[128];
                str_format(aBuf, sizeof(aBuf), "Purchased Death particles. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
                pSelf->SendChatTarget(ClientId, aBuf);
@@ -123,7 +124,7 @@ void CGameContext::ConBuy(IConsole::IResult *pResult, void *pUserData)
                }
                pPl->m_Bobucks -= Cost;
                pPl->m_CosmeticsOwned |= 4;
-               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pSelf->Score()->SaveBobucks(pName, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                char aBuf[128];
                str_format(aBuf, sizeof(aBuf), "Purchased Rainbow skin. Balance: %d. Use /inventory to view cosmetics.", pPl->m_Bobucks);
                pSelf->SendChatTarget(ClientId, aBuf);
@@ -174,10 +175,30 @@ void CGameContext::ConInventory(IConsole::IResult *pResult, void *pUserData)
        {
                pSelf->SendChatTarget(ClientId, "You don't own any cosmetics.");
        }
-       else if(pPl->m_ActiveCosmetic)
+       else if(pPl->m_ActiveCosmetics)
        {
-               char aBuf[64];
-               str_format(aBuf, sizeof(aBuf), "Currently using cosmetic %d. Use /use 0 to clear.", pPl->m_ActiveCosmetic);
+               char aList[64] = "";
+               bool First = true;
+               if(pPl->m_ActiveCosmetics & 1)
+               {
+                       str_append(aList, "1", sizeof(aList));
+                       First = false;
+               }
+               if(pPl->m_ActiveCosmetics & 2)
+               {
+                       if(!First)
+                               str_append(aList, ",", sizeof(aList));
+                       str_append(aList, "2", sizeof(aList));
+                       First = false;
+               }
+               if(pPl->m_ActiveCosmetics & 4)
+               {
+                       if(!First)
+                               str_append(aList, ",", sizeof(aList));
+                       str_append(aList, "3", sizeof(aList));
+               }
+               char aBuf[128];
+               str_format(aBuf, sizeof(aBuf), "Currently using cosmetics %s. Use /use 0 to clear.", aList);
                pSelf->SendChatTarget(ClientId, aBuf);
        }
 }
@@ -195,10 +216,10 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
        const char *pName2 = pSelf->Server()->ClientName(ClientId);
        if(Num == 0)
        {
-               if(pPl->m_ActiveCosmetic == 3)
+               if(pPl->m_ActiveCosmetics & 4)
                        pPl->RestoreSkin();
-               pPl->m_ActiveCosmetic = 0;
-               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pPl->m_ActiveCosmetics = 0;
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                pSelf->SendChatTarget(ClientId, "Cosmetics cleared.");
                return;
        }
@@ -209,10 +230,8 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
                        pSelf->SendChatTarget(ClientId, "You don't own this cosmetic.");
                        return;
                }
-               if(pPl->m_ActiveCosmetic == 3)
-                       pPl->RestoreSkin();
-               pPl->m_ActiveCosmetic = 1;
-               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pPl->m_ActiveCosmetics |= 1;
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                pSelf->SendChatTarget(ClientId, "Using Resurrection particles.");
                return;
        }
@@ -223,10 +242,8 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
                        pSelf->SendChatTarget(ClientId, "You don't own this cosmetic.");
                        return;
                }
-               if(pPl->m_ActiveCosmetic == 3)
-                       pPl->RestoreSkin();
-               pPl->m_ActiveCosmetic = 2;
-               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pPl->m_ActiveCosmetics |= 2;
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                pSelf->SendChatTarget(ClientId, "Using Death particles.");
                return;
        }
@@ -239,9 +256,9 @@ void CGameContext::ConUse(IConsole::IResult *pResult, void *pUserData)
                }
                if(!pPl->m_RainbowColorsSaved)
                        pPl->SaveSkin();
-               pPl->m_ActiveCosmetic = 3;
+               pPl->m_ActiveCosmetics |= 4;
                pPl->m_RainbowHue = 0.0f;
-               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetic);
+               pSelf->Score()->SaveBobucks(pName2, pPl->m_Bobucks, pPl->m_CosmeticsOwned, pPl->m_ActiveCosmetics);
                pSelf->SendChatTarget(ClientId, "Using Rainbow skin.");
                return;
        }

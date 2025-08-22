@@ -53,7 +53,7 @@ void CScorePlayerResult::SetVariant(Variant v)
        case BOBUCKS:
                m_Data.m_BobucksInfo.m_Bobucks = 0;
                m_Data.m_BobucksInfo.m_Cosmetics = 0;
-               m_Data.m_BobucksInfo.m_ActiveCosmetic = 0;
+               m_Data.m_BobucksInfo.m_ActiveCosmetics = 0;
                break;
        }
 }
@@ -840,7 +840,7 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
        }
        char aBuf[256];
        str_format(aBuf, sizeof(aBuf),
-               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
+               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
                pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
        if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
                return false;
@@ -848,13 +848,13 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
        if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
                return false;
 
-       str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetic) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
+       str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetics) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
        if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
                return false;
        pSqlServer->BindString(1, pData->m_aName);
        pSqlServer->BindInt(2, pData->m_Bobucks);
        pSqlServer->BindInt(3, pData->m_Cosmetics);
-       pSqlServer->BindInt(4, pData->m_ActiveCosmetic);
+       pSqlServer->BindInt(4, pData->m_ActiveCosmetics);
        if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
                return false;
        return true;
@@ -880,14 +880,14 @@ return false;
        char aBuf[256];
        int NumUpdated;
        str_format(aBuf, sizeof(aBuf),
-               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetic INT NOT NULL);",
+               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
                pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
 if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 return false;
 if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
 return false;
 
-       str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetic FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
+       str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetics FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
 if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 return false;
        pSqlServer->BindString(1, pData->m_aName);
@@ -898,7 +898,7 @@ if(!End)
 {
 pResult->m_Data.m_BobucksInfo.m_Bobucks = pSqlServer->GetInt(1);
 pResult->m_Data.m_BobucksInfo.m_Cosmetics = pSqlServer->GetInt(2);
-pResult->m_Data.m_BobucksInfo.m_ActiveCosmetic = pSqlServer->GetInt(3);
+pResult->m_Data.m_BobucksInfo.m_ActiveCosmetics = pSqlServer->GetInt(3);
 }
 return true;
 }

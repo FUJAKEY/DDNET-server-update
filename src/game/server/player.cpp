@@ -30,7 +30,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, uint32_t UniqueClientId, int ClientI
        Reset();
        m_Bobucks = 0;
        m_CosmeticsOwned = 0;
-       m_ActiveCosmetic = 0;
+       m_ActiveCosmetics = 0;
        m_RainbowHue = 0.0f;
        m_RainbowColorsSaved = false;
        m_OriginalUseCustomColor = 0;
@@ -278,17 +278,19 @@ void CPlayer::Tick()
                                if(Server()->Tick() % 20 == 0)
                                {
                                        CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
-                                       if(m_ActiveCosmetic == 1)
+                                       if(m_ActiveCosmetics & 1)
                                        {
-                                               GameServer()->CreatePlayerSpawn(m_pCharacter->m_Pos, Mask);
+                                               GameServer()->CreateResurrection(m_pCharacter->m_Pos, Mask);
                                        }
-                                       else if(m_ActiveCosmetic == 2)
+                                       if(m_ActiveCosmetics & 2)
                                        {
                                                GameServer()->CreateDeath(m_pCharacter->m_Pos, m_ClientId, Mask);
                                        }
                                }
-                               if(m_ActiveCosmetic == 3 && Server()->Tick() % 5 == 0)
+                               if((m_ActiveCosmetics & 4) && Server()->Tick() % 5 == 0)
                                {
+                                       if(!m_RainbowColorsSaved)
+                                               SaveSkin();
                                        m_RainbowHue += 0.02f;
                                        if(m_RainbowHue > 1.0f)
                                                m_RainbowHue -= 1.0f;
@@ -1105,7 +1107,7 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
                case CScorePlayerResult::BOBUCKS:
                        m_Bobucks = Result.m_Data.m_BobucksInfo.m_Bobucks;
                        m_CosmeticsOwned = Result.m_Data.m_BobucksInfo.m_Cosmetics;
-                       m_ActiveCosmetic = Result.m_Data.m_BobucksInfo.m_ActiveCosmetic;
+                       m_ActiveCosmetics = Result.m_Data.m_BobucksInfo.m_ActiveCosmetics;
                        break;
                }
        }

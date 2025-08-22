@@ -385,7 +385,7 @@ void CScore::GetSaves(int ClientId)
         ExecPlayerThread(CScoreWorker::GetSaves, "get saves", ClientId, "", 0);
 }
 
-void CScore::SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int Active)
+void CScore::SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int ActiveMask)
 {
        if(!m_pPool)
        {
@@ -396,7 +396,7 @@ void CScore::SaveBobucks(const char *pName, int Bobucks, int Cosmetics, int Acti
        str_copy(Tmp->m_aName, pName, sizeof(Tmp->m_aName));
        Tmp->m_Bobucks = Bobucks;
        Tmp->m_Cosmetics = Cosmetics;
-       Tmp->m_ActiveCosmetic = Active;
+       Tmp->m_ActiveCosmetics = ActiveMask;
        m_pPool->ExecuteWrite(CScoreWorker::SaveBobucks, std::move(Tmp), "save bobucks");
 }
 

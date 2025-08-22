@@ -63,7 +63,7 @@ struct CScorePlayerResult : ISqlResult
                {
                        int m_Bobucks;
                        int m_Cosmetics;
-                       int m_ActiveCosmetic;
+                       int m_ActiveCosmetics;
                } m_BobucksInfo;
        } m_Data = {}; // PLAYER_INFO
 
@@ -162,7 +162,7 @@ struct CSqlBobucksSave : ISqlData
        char m_aName[MAX_NAME_LENGTH];
        int m_Bobucks;
        int m_Cosmetics;
-       int m_ActiveCosmetic;
+       int m_ActiveCosmetics;
 };
 
 struct CSqlBobucksRequest : ISqlData
