@@ -279,10 +279,10 @@ void CPlayer::Tick()
                                {
                                       CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
                                       Mask.set(m_ClientId);
-                                      if(m_ActiveCosmetics & 1)
-                                      {
-                                              GameServer()->CreateFreezeEffect(m_pCharacter->m_Pos, Mask);
-                                      }
+                                     if(m_ActiveCosmetics & 1)
+                                     {
+                                             m_pCharacter->FlashFreezeEffect();
+                                     }
                                       if(m_ActiveCosmetics & 2)
                                       {
                                               GameServer()->CreateDeath(m_pCharacter->m_Pos, m_ClientId, Mask);
