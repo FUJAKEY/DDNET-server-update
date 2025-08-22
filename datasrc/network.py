@@ -352,6 +352,8 @@ Objects = [
                 NetIntAny("m_Angle"),
         ]),
 
+        NetEvent("FreezeEffect:Common", []),
+
        NetEventEx("Birthday:Common", "birthday@netevent.ddnet.org", []),
 
 	NetEventEx("Finish:Common", "finish@netevent.ddnet.org", []),

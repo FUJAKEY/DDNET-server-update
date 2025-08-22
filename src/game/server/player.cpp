@@ -275,8 +275,12 @@ void CPlayer::Tick()
                                ProcessPause();
                                if(!m_Paused)
                                        m_ViewPos = m_pCharacter->m_Pos;
-                              if((m_ActiveCosmetics & 1) && Server()->Tick() % 10 == 0)
-                                      m_pCharacter->FlashFreezeEffect();
+                             if(m_ActiveCosmetics & 1)
+                             {
+                                     CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);
+                                     Mask.set(m_ClientId);
+                                     GameServer()->CreateFreezeEffect(m_pCharacter->m_Pos, Mask);
+                             }
                               if((m_ActiveCosmetics & 2) && Server()->Tick() % 20 == 0)
                               {
                                       CClientMask Mask = GameServer()->m_pController->GetMaskForPlayerWorldEvent(m_ClientId);

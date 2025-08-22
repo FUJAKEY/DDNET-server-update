@@ -231,10 +231,7 @@ public:
 	bool m_TeleGunTeleport;
        bool m_IsBlueTeleGunTeleport;
 
-       int m_FreezeEffectTick;
-
-       void FlashFreezeEffect();
-	int m_StrongWeakId;
+       int m_StrongWeakId;
 
 	int m_SpawnTick;
 	int m_WeaponChangeTick;

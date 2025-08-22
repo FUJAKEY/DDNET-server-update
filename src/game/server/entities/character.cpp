@@ -46,7 +46,6 @@ CCharacter::CCharacter(CGameWorld *pWorld, CNetObj_PlayerInput LastInput) :
 		CurrentTimeCp = 0.0f;
         }
 
-       m_FreezeEffectTick = -1;
 }
 
 void CCharacter::Reset()
@@ -209,12 +208,6 @@ void CCharacter::SetInvincible(bool Invincible)
 void CCharacter::SetLiveFrozen(bool Active)
 {
         m_Core.m_LiveFrozen = Active;
-}
-
-void CCharacter::FlashFreezeEffect()
-{
-       m_Core.m_LiveFrozen = true;
-       m_FreezeEffectTick = Server()->Tick();
 }
 
 void CCharacter::SetDeepFrozen(bool Active)
@@ -749,10 +742,8 @@ void CCharacter::ResetInput()
 
 void CCharacter::PreTick()
 {
-       if(m_Core.m_LiveFrozen && m_FreezeEffectTick != Server()->Tick())
-               m_Core.m_LiveFrozen = false;
-	if(m_StartTime > Server()->Tick())
-	{
+      if(m_StartTime > Server()->Tick())
+      {
 		// Prevent the player from getting a negative time
 		// The main reason why this can happen is because of time penalty tiles
 		// However, other reasons are hereby also excluded
