@@ -228,12 +228,12 @@ bool CScoreWorker::LoadPlayerData(IDbConnection *pSqlServer, const ISqlData *pGa
 	}
 
 	// birthday check
-	str_format(aBuf, sizeof(aBuf),
-		"SELECT DATE_FORMAT(CURRENT_TIMESTAMP, '%Y-%m-%d %H:%i:%s') AS Current, "
-		"IFNULL(DATE_FORMAT(MIN(Timestamp), '%Y-%m-%d %H:%i:%s'), '') AS Stamp "
-		"FROM %s_race "
-		"WHERE Name = ?",
-		pSqlServer->GetPrefix());
+       str_format(aBuf, sizeof(aBuf),
+               "SELECT DATE_FORMAT(CURRENT_TIMESTAMP, '%%Y-%%m-%%d %%H:%%i:%%s') AS Current, "
+               "IFNULL(DATE_FORMAT(MIN(Timestamp), '%%Y-%%m-%%d %%H:%%i:%%s'), '') AS Stamp "
+               "FROM %s_race "
+               "WHERE Name = ?",
+               pSqlServer->GetPrefix());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 	{
 		return false;
