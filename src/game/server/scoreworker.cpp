@@ -840,16 +840,16 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
 	}
 	char aBuf[256];
 	// ensure schema matches columns used in save/load queries
-	str_format(aBuf, sizeof(aBuf),
-		"CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveActions INT NOT NULL);",
-		pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
+       str_format(aBuf, sizeof(aBuf),
+               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
+               pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	int NumUpdated;
 	if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
 		return false;
 
-	str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveActions) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
+       str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetics) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	pSqlServer->BindString(1, pData->m_aName);
@@ -880,15 +880,15 @@ bool CScoreWorker::LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
 	pResult->SetVariant(CScorePlayerResult::BOBUCKS);
 	char aBuf[256];
 	int NumUpdated;
-	str_format(aBuf, sizeof(aBuf),
-		"CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveActions INT NOT NULL);",
-		pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
+       str_format(aBuf, sizeof(aBuf),
+               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
+               pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
 		return false;
 
-	str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveActions FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
+       str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetics FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	pSqlServer->BindString(1, pData->m_aName);
