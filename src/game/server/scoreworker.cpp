@@ -239,22 +239,25 @@ bool CScoreWorker::LoadPlayerData(IDbConnection *pSqlServer, const ISqlData *pGa
 	}
 	pSqlServer->BindString(1, pData->m_aRequestingPlayer);
 
-	if(!pSqlServer->Step(&End, pError, ErrorSize))
-	{
-		return false;
-	}
-	if(!End && !pSqlServer->IsNull(2))
-	{
-		char aCurrent[TIMESTAMP_STR_LENGTH];
-		pSqlServer->GetString(1, aCurrent, sizeof(aCurrent));
-		char aStamp[TIMESTAMP_STR_LENGTH];
-		pSqlServer->GetString(2, aStamp, sizeof(aStamp));
-		int CurrentYear, CurrentMonth, CurrentDay;
-		int StampYear, StampMonth, StampDay;
-		if(sscanf(aCurrent, "%d-%d-%d", &CurrentYear, &CurrentMonth, &CurrentDay) == 3 && sscanf(aStamp, "%d-%d-%d", &StampYear, &StampMonth, &StampDay) == 3 && CurrentMonth == StampMonth && CurrentDay == StampDay)
-			pResult->m_Data.m_Info.m_Birthday = CurrentYear - StampYear;
-	}
-	return true;
+       if(!pSqlServer->Step(&End, pError, ErrorSize))
+       {
+               return false;
+       }
+       if(!End)
+       {
+               char aCurrent[TIMESTAMP_STR_LENGTH];
+               pSqlServer->GetString(1, aCurrent, sizeof(aCurrent));
+               char aStamp[TIMESTAMP_STR_LENGTH] = {0};
+               pSqlServer->GetString(2, aStamp, sizeof(aStamp));
+               if(aStamp[0])
+               {
+                       int CurrentYear, CurrentMonth, CurrentDay;
+                       int StampYear, StampMonth, StampDay;
+                       if(sscanf(aCurrent, "%d-%d-%d", &CurrentYear, &CurrentMonth, &CurrentDay) == 3 && sscanf(aStamp, "%d-%d-%d", &StampYear, &StampMonth, &StampDay) == 3 && CurrentMonth == StampMonth && CurrentDay == StampDay)
+                               pResult->m_Data.m_Info.m_Birthday = CurrentYear - StampYear;
+               }
+       }
+       return true;
 }
 
 bool CScoreWorker::LoadPlayerTimeCp(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
