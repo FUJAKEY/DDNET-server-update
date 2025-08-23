@@ -1,6 +1,6 @@
 if(NOT CMAKE_CROSSCOMPILING)
   find_program(MYSQL_CONFIG
-    NAMES mariadb_config mysql_config
+    NAMES mariadb_config
   )
 
   if(MYSQL_CONFIG)
@@ -37,7 +37,7 @@ endif()
 set_extra_dirs_lib(MYSQL mysql)
 
 find_library(MYSQL_LIBRARY
-  NAMES "mariadb" "mariadbclient" "mysqlclient" "mysqlclient_r"
+  NAMES "mariadb" "mariadbclient"
   #explicitly tell CMake to search through the nix/store when using nix/NixOS
   HINTS 
     ${NIX_STORE_DIR}
