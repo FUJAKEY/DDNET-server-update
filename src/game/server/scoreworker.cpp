@@ -229,7 +229,8 @@ bool CScoreWorker::LoadPlayerData(IDbConnection *pSqlServer, const ISqlData *pGa
 
 	// birthday check
 	str_format(aBuf, sizeof(aBuf),
-		"SELECT CURRENT_TIMESTAMP AS Current, MIN(Timestamp) AS Stamp "
+		"SELECT DATE_FORMAT(CURRENT_TIMESTAMP, '%Y-%m-%d %H:%i:%s') AS Current, "
+		"IFNULL(DATE_FORMAT(MIN(Timestamp), '%Y-%m-%d %H:%i:%s'), '') AS Stamp "
 		"FROM %s_race "
 		"WHERE Name = ?",
 		pSqlServer->GetPrefix());
@@ -239,25 +240,25 @@ bool CScoreWorker::LoadPlayerData(IDbConnection *pSqlServer, const ISqlData *pGa
 	}
 	pSqlServer->BindString(1, pData->m_aRequestingPlayer);
 
-       if(!pSqlServer->Step(&End, pError, ErrorSize))
-       {
-               return false;
-       }
-       if(!End)
-       {
-               char aCurrent[TIMESTAMP_STR_LENGTH];
-               pSqlServer->GetString(1, aCurrent, sizeof(aCurrent));
-               char aStamp[TIMESTAMP_STR_LENGTH] = {0};
-               pSqlServer->GetString(2, aStamp, sizeof(aStamp));
-               if(aStamp[0])
-               {
-                       int CurrentYear, CurrentMonth, CurrentDay;
-                       int StampYear, StampMonth, StampDay;
-                       if(sscanf(aCurrent, "%d-%d-%d", &CurrentYear, &CurrentMonth, &CurrentDay) == 3 && sscanf(aStamp, "%d-%d-%d", &StampYear, &StampMonth, &StampDay) == 3 && CurrentMonth == StampMonth && CurrentDay == StampDay)
-                               pResult->m_Data.m_Info.m_Birthday = CurrentYear - StampYear;
-               }
-       }
-       return true;
+	if(!pSqlServer->Step(&End, pError, ErrorSize))
+	{
+		return false;
+	}
+	if(!End)
+	{
+		char aCurrent[TIMESTAMP_STR_LENGTH];
+		pSqlServer->GetString(1, aCurrent, sizeof(aCurrent));
+		char aStamp[TIMESTAMP_STR_LENGTH] = {0};
+		pSqlServer->GetString(2, aStamp, sizeof(aStamp));
+		if(aStamp[0])
+		{
+			int CurrentYear, CurrentMonth, CurrentDay;
+			int StampYear, StampMonth, StampDay;
+			if(sscanf(aCurrent, "%d-%d-%d", &CurrentYear, &CurrentMonth, &CurrentDay) == 3 && sscanf(aStamp, "%d-%d-%d", &StampYear, &StampMonth, &StampDay) == 3 && CurrentMonth == StampMonth && CurrentDay == StampDay)
+				pResult->m_Data.m_Info.m_Birthday = CurrentYear - StampYear;
+		}
+	}
+	return true;
 }
 
 bool CScoreWorker::LoadPlayerTimeCp(IDbConnection *pSqlServer, const ISqlData *pGameData, char *pError, int ErrorSize)
@@ -843,16 +844,16 @@ bool CScoreWorker::SaveBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
 	}
 	char aBuf[256];
 	// ensure schema matches columns used in save/load queries
-       str_format(aBuf, sizeof(aBuf),
-               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
-               pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
+	str_format(aBuf, sizeof(aBuf),
+		"CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
+		pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	int NumUpdated;
 	if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
 		return false;
 
-       str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetics) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
+	str_format(aBuf, sizeof(aBuf), "REPLACE INTO %s_bobucks (Name,Bobucks,Cosmetics,ActiveCosmetics) VALUES(?,?,?,?);", pSqlServer->GetPrefix());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	pSqlServer->BindString(1, pData->m_aName);
@@ -883,15 +884,15 @@ bool CScoreWorker::LoadBobucks(IDbConnection *pSqlServer, const ISqlData *pGameD
 	pResult->SetVariant(CScorePlayerResult::BOBUCKS);
 	char aBuf[256];
 	int NumUpdated;
-       str_format(aBuf, sizeof(aBuf),
-               "CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
-               pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
+	str_format(aBuf, sizeof(aBuf),
+		"CREATE TABLE IF NOT EXISTS %s_bobucks (Name VARCHAR(%d) COLLATE %s PRIMARY KEY, Bobucks INT NOT NULL, Cosmetics INT NOT NULL, ActiveCosmetics INT NOT NULL);",
+		pSqlServer->GetPrefix(), MAX_NAME_LENGTH_SQL, pSqlServer->BinaryCollate());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	if(!pSqlServer->ExecuteUpdate(&NumUpdated, pError, ErrorSize))
 		return false;
 
-       str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetics FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
+	str_format(aBuf, sizeof(aBuf), "SELECT Bobucks,Cosmetics,ActiveCosmetics FROM %s_bobucks WHERE Name=?;", pSqlServer->GetPrefix());
 	if(!pSqlServer->PrepareStatement(aBuf, pError, ErrorSize))
 		return false;
 	pSqlServer->BindString(1, pData->m_aName);
